@@ -1,0 +1,24 @@
+# Xcode
+*.xcodeproj/
+build/
+DerivedData/
+*.xcuserdatad/
+*.xcuserstate
+
+# Swift Package Manager
+.swiftpm/
+.build/
+Packages/
+Package.resolved
+
+# Generated
+*.dSYM
+*.dSYM.zip
+
+# OS
+.DS_Store
+
+# Local data should never be committed
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
