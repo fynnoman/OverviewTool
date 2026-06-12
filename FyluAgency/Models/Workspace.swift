@@ -47,6 +47,12 @@ final class Workspace {
     @Relationship(deleteRule: .cascade, inverse: \Lead.workspace)
     var leads: [Lead] = []
 
+    @Relationship(deleteRule: .cascade, inverse: \DeductibleExpense.workspace)
+    var deductibleExpenses: [DeductibleExpense] = []
+
+    @Relationship(deleteRule: .cascade, inverse: \Todo.workspace)
+    var todos: [Todo] = []
+
     init(
         id: UUID = UUID(),
         name: String,

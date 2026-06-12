@@ -7,18 +7,24 @@ struct LeadsListView: View {
     @State private var showNewLead = false
     @State private var selectedLead: Lead?
 
+    private var openLeads: [Lead] {
+        workspace.leads.filter { $0.status != .won && $0.status != .lost }
+    }
+
     private var pipelineValue: Double {
-        workspace.leads
-            .filter { $0.status != .won && $0.status != .lost }
-            .compactMap(\.expectedValue)
-            .reduce(0, +)
+        openLeads.compactMap(\.expectedValue).reduce(0, +)
     }
 
     private var wonValue: Double {
-        workspace.leads
-            .filter { $0.status == .won }
-            .compactMap(\.expectedValue)
-            .reduce(0, +)
+        workspace.leads.filter { $0.status == .won }.compactMap(\.expectedValue).reduce(0, +)
+    }
+
+    private var lostValue: Double {
+        workspace.leads.filter { $0.status == .lost }.compactMap(\.expectedValue).reduce(0, +)
+    }
+
+    private var allOffersValue: Double {
+        workspace.leads.compactMap(\.expectedValue).reduce(0, +)
     }
 
     var body: some View {
@@ -27,7 +33,7 @@ struct LeadsListView: View {
                 HStack {
                     VStack(alignment: .leading) {
                         Text("Leads").font(.title2).fontWeight(.semibold)
-                        Text("Pipeline: \(Money.format(pipelineValue))  ·  Gewonnen: \(Money.format(wonValue))")
+                        Text("\(workspace.leads.count) Leads · alle Angebote zusammen \(Money.format(allOffersValue))")
                             .font(.callout).foregroundStyle(.secondary)
                     }
                     Spacer()
@@ -38,7 +44,40 @@ struct LeadsListView: View {
                     }
                     .buttonStyle(.borderedProminent)
                 }
-                .padding(20)
+                .padding(.horizontal, 20).padding(.top, 20)
+
+                HStack(spacing: 12) {
+                    KpiCard(
+                        title: "Pipeline · offen",
+                        value: Money.format(pipelineValue),
+                        accent: true
+                    )
+                    KpiCard(
+                        title: "Gewonnen",
+                        value: Money.format(wonValue),
+                        tone: wonValue > 0 ? .positive : .neutral
+                    )
+                    KpiCard(
+                        title: "Verloren",
+                        value: Money.format(lostValue),
+                        tone: lostValue > 0 ? .danger : .neutral
+                    )
+                    KpiCard(
+                        title: "Leads gesamt",
+                        value: "\(workspace.leads.count)",
+                        muted: true
+                    )
+                }
+                .padding(.horizontal, 20).padding(.top, 12).padding(.bottom, 16)
+
+                if pipelineValue > 0 {
+                    HStack(spacing: 6) {
+                        Image(systemName: "lightbulb.fill").foregroundStyle(Color.orange)
+                        Text("Wenn alle offenen Leads zu Kunden werden, kommen erstmal \(Money.format(pipelineValue)) rein.")
+                            .font(.callout).foregroundStyle(.secondary)
+                    }
+                    .padding(.horizontal, 20).padding(.bottom, 12)
+                }
 
                 Divider()
 
@@ -49,7 +88,8 @@ struct LeadsListView: View {
                                 status: status,
                                 leads: workspace.leads.filter { $0.status == status }
                                     .sorted(by: { $0.updatedAt > $1.updatedAt }),
-                                onSelect: { lead in selectedLead = lead }
+                                onSelect: { lead in selectedLead = lead },
+                                onDelete: { lead in deleteLead(lead) }
                             )
                             .frame(width: 240)
                         }
@@ -67,12 +107,19 @@ struct LeadsListView: View {
             }
         }
     }
+
+    private func deleteLead(_ lead: Lead) {
+        if selectedLead?.id == lead.id { selectedLead = nil }
+        modelContext.delete(lead)
+        try? modelContext.save()
+    }
 }
 
 struct KanbanColumn: View {
     let status: LeadStatus
     let leads: [Lead]
     let onSelect: (Lead) -> Void
+    let onDelete: (Lead) -> Void
 
     private var color: Color {
         switch status {
@@ -112,6 +159,11 @@ struct KanbanColumn: View {
                             LeadCard(lead: lead)
                         }
                         .buttonStyle(.plain)
+                        .contextMenu {
+                            Button("Öffnen") { onSelect(lead) }
+                            Divider()
+                            Button("Löschen", role: .destructive) { onDelete(lead) }
+                        }
                     }
                 }
             }
@@ -136,9 +188,18 @@ struct LeadCard: View {
             if !lead.company.isEmpty {
                 Text(lead.company).font(.caption).foregroundStyle(.secondary).lineLimit(1)
             }
-            HStack {
+            if let offer = lead.offerDescription, !offer.isEmpty {
+                Text(offer)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+                    .padding(.top, 2)
+            }
+            HStack(alignment: .firstTextBaseline) {
                 if let v = lead.expectedValue {
-                    Text(Money.format(v)).font(.caption).fontWeight(.medium)
+                    Text(Money.format(v))
+                        .font(.callout).fontWeight(.semibold)
+                        .foregroundStyle(Color.green)
                 } else {
                     Text("—").font(.caption).foregroundStyle(.secondary)
                 }
@@ -146,6 +207,7 @@ struct LeadCard: View {
                 Text(DateFmt.short(lead.lastContactAt ?? lead.createdAt))
                     .font(.caption2).foregroundStyle(.secondary)
             }
+            .padding(.top, 2)
         }
         .padding(10)
         .background(Color.white.opacity(0.6))
@@ -170,6 +232,7 @@ struct NewLeadSheet: View {
     @State private var phone = ""
     @State private var source = ""
     @State private var expectedValueText = ""
+    @State private var offerDescription = ""
     @State private var notes = ""
 
     var body: some View {
@@ -189,7 +252,8 @@ struct NewLeadSheet: View {
                 }
                 Section("Vertrieb") {
                     TextField("Quelle (Instagram, Empfehlung…)", text: $source)
-                    TextField("Geschätzter Wert (€)", text: $expectedValueText)
+                    TextField("Wofür ist das Angebot? (z. B. Website + SEO)", text: $offerDescription)
+                    TextField("Angebotswert (€)", text: $expectedValueText)
                 }
                 Section("Notizen") {
                     TextEditor(text: $notes).frame(minHeight: 120)
@@ -209,6 +273,7 @@ struct NewLeadSheet: View {
                         phone: phone,
                         source: source,
                         expectedValue: value,
+                        offerDescription: offerDescription,
                         notes: notes
                     )
                     lead.workspace = workspace
@@ -232,6 +297,9 @@ struct LeadDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var expectedValueText: String = ""
     @State private var showDelete = false
+    @State private var newWishTitle = ""
+    @State private var newWishPrice = ""
+    @State private var newWishDesc = ""
 
     var body: some View {
         ScrollView {
@@ -241,6 +309,7 @@ struct LeadDetailView: View {
                     .foregroundStyle(.secondary)
 
                 statusCard
+                wishesCard
                 detailsCard
                 notesCard
                 actionsCard
@@ -286,6 +355,55 @@ struct LeadDetailView: View {
         }
     }
 
+    private var openWishesCount: Int {
+        lead.issues.filter { !$0.done }.count
+    }
+
+    private var wishesCard: some View {
+        Card("Wünsche & Anforderungen", subtitle: "\(openWishesCount) offen · \(lead.issues.filter(\.done).count) erledigt") {
+            VStack(spacing: 0) {
+                ForEach(lead.issues.sorted(by: { ($0.done ? 1 : 0) < ($1.done ? 1 : 0) || ($0.createdAt > $1.createdAt) })) { issue in
+                    IssueRow(issue: issue)
+                }
+                if lead.issues.isEmpty {
+                    Text("Was wünscht sich der Lead — was muss er bekommen, was kostet das?")
+                        .font(.callout).foregroundStyle(.secondary).padding(.vertical, 12)
+                }
+                Divider().padding(.vertical, 6)
+                VStack(spacing: 6) {
+                    HStack {
+                        TextField("Wunsch / Anforderung", text: $newWishTitle)
+                            .textFieldStyle(.roundedBorder)
+                        TextField("€", text: $newWishPrice)
+                            .textFieldStyle(.roundedBorder)
+                            .frame(width: 80)
+                        Button { addWish() } label: { Image(systemName: "plus") }
+                            .disabled(newWishTitle.trimmingCharacters(in: .whitespaces).isEmpty)
+                    }
+                    TextField("Beschreibung (optional)", text: $newWishDesc)
+                        .textFieldStyle(.roundedBorder)
+                }
+            }
+        }
+    }
+
+    private func addWish() {
+        let title = newWishTitle.trimmingCharacters(in: .whitespaces)
+        guard !title.isEmpty else { return }
+        let price = Double(newWishPrice.replacingOccurrences(of: ",", with: "."))
+        let issue = Issue(
+            title: title,
+            details: newWishDesc,
+            price: price
+        )
+        issue.lead = lead
+        modelContext.insert(issue)
+        try? modelContext.save()
+        newWishTitle = ""
+        newWishPrice = ""
+        newWishDesc = ""
+    }
+
     private var detailsCard: some View {
         Card("Daten") {
             VStack(alignment: .leading, spacing: 8) {
@@ -294,13 +412,24 @@ struct LeadDetailView: View {
                 LabeledField(label: "E-Mail", text: $lead.email)
                 LabeledField(label: "Telefon", text: $lead.phone)
                 LabeledField(label: "Quelle", text: $lead.source)
+                LabeledField(
+                    label: "Angebot wofür?",
+                    text: Binding(
+                        get: { lead.offerDescription ?? "" },
+                        set: { lead.offerDescription = $0.isEmpty ? nil : $0 }
+                    )
+                )
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Geschätzter Wert (€)").font(.caption).foregroundStyle(.secondary)
-                    TextField("z. B. 1200", text: $expectedValueText)
+                    Text("Angebotswert (€)").font(.caption).foregroundStyle(.secondary)
+                    TextField("z. B. 800", text: $expectedValueText)
                         .textFieldStyle(.roundedBorder)
                         .onChange(of: expectedValueText) { _, new in
                             lead.expectedValue = Double(new.replacingOccurrences(of: ",", with: "."))
                         }
+                    if let v = lead.expectedValue, v > 0 {
+                        Text("→ \(Money.format(v)) wenn der Lead zum Kunden wird")
+                            .font(.caption).foregroundStyle(Color.green)
+                    }
                 }
             }
         }
@@ -346,6 +475,20 @@ struct LeadDetailView: View {
         )
         customer.workspace = workspace
         modelContext.insert(customer)
+
+        // Migrate wishes/issues over to the new customer so nothing is lost.
+        for wish in lead.issues {
+            let copied = Issue(
+                title: wish.title,
+                details: wish.details,
+                price: wish.price,
+                done: wish.done,
+                order: wish.order
+            )
+            copied.customer = customer
+            modelContext.insert(copied)
+        }
+
         lead.status = .won
         try? modelContext.save()
         dismiss()

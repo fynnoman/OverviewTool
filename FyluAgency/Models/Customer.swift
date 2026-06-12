@@ -29,6 +29,9 @@ final class Customer {
     @Relationship(deleteRule: .cascade, inverse: \UploadedInvoice.customer)
     var uploadedInvoices: [UploadedInvoice] = []
 
+    @Relationship(deleteRule: .cascade, inverse: \CashIncome.customer)
+    var cashIncomes: [CashIncome] = []
+
     init(
         id: UUID = UUID(),
         name: String,
@@ -51,8 +54,10 @@ final class Customer {
         self.updatedAt = Date()
     }
 
-    /// Total amount invoiced (gross). Computed on the fly because invoice
-    /// status (paid / open) shouldn't affect what we count as billed.
+    /// Steuerpflichtiger Brutto-Umsatz aus echten Rechnungen — fließt in
+    /// MwSt./Umsatzsteuer-Berechnungen ein.
+    /// Cash-Einnahmen (siehe `totalCashIncome`) sind hier bewusst NICHT
+    /// enthalten, weil sie ohne Rechnung & ohne Umsatzsteuer gebucht sind.
     var totalInvoiced: Double {
         invoices.reduce(0) { $0 + $1.total }
     }
@@ -65,8 +70,37 @@ final class Customer {
         invoices.reduce(0) { $0 + $1.vatAmount }
     }
 
+    /// Bareinnahmen — echtes Geld, aber steuerfrei für die App-internen
+    /// Umsatzsteuer-KPIs.
+    var totalCashIncome: Double {
+        cashIncomes.reduce(0) { $0 + $1.amount }
+    }
+
+    /// Tatsächlich eingenommenes Geld (Rechnungen + Bareinnahmen) — nur
+    /// für Reingewinn-Berechnungen, NICHT für USt.
+    var totalIncomeAll: Double {
+        totalInvoiced + totalCashIncome
+    }
+
+    /// Summe aller dem Kunden zugeordneten Kosten (egal welcher Frequenz —
+    /// der eingetragene Betrag wird so gezählt, wie er erfasst wurde).
+    var totalCosts: Double {
+        costs.reduce(0) { $0 + $1.amount }
+    }
+
+    /// Reingewinn = alles was reinkam (Rechnungen + Bar) minus Kosten.
+    var profit: Double {
+        totalIncomeAll - totalCosts
+    }
+
     var openIssuesCount: Int {
         issues.filter { !$0.done }.count
+    }
+
+    /// Summe der `price`-Werte aller offenen Aufgaben — was an Umsatz
+    /// reinkäme, wenn man die heute alle abschließt.
+    var openIssuesValue: Double {
+        issues.filter { !$0.done }.compactMap(\.price).reduce(0, +)
     }
 
     var monthlyRecurringCost: Double {

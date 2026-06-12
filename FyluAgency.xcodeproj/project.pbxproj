@@ -1,0 +1,473 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		02944ECB74F312AF94D585BD /* SaveButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19B1248ADAF0F658C0358B57 /* SaveButton.swift */; };
+		0E1A46188A250B244CD34E7D /* Lead.swift in Sources */ = {isa = PBXBuildFile; fileRef = B79764C3C46C01987639F408 /* Lead.swift */; };
+		1252F574CB4C207939D762C5 /* OCRService.swift in Sources */ = {isa = PBXBuildFile; fileRef = EACA4944494BB313C484CD05 /* OCRService.swift */; };
+		1B13DED7D3F9804CA267A216 /* Cost.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC91A5D7C184A1B720220D0C /* Cost.swift */; };
+		22F14BD63A75B99E3D7A24CE /* PDFRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F098F5875B3C62D2B44E2890 /* PDFRenderer.swift */; };
+		2C8EC815604492FBC8575BBB /* Invoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = E90626FD22F43B763B1E0050 /* Invoice.swift */; };
+		3FE577C0FFEB7C132BAD2A31 /* UploadedInvoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 828128D74A08D6453E4CC493 /* UploadedInvoice.swift */; };
+		AAAA000000000000000000A1 /* CashIncome.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA000000000000000000B1 /* CashIncome.swift */; };
+		BBBB000000000000000000A1 /* DeductibleExpense.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB000000000000000000B1 /* DeductibleExpense.swift */; };
+		BBBB000000000000000000A2 /* CostsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB000000000000000000B2 /* CostsListView.swift */; };
+		BBBB000000000000000000A3 /* TodoListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB000000000000000000B3 /* TodoListView.swift */; };
+		CCCC000000000000000000A1 /* Todo.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCCC000000000000000000B1 /* Todo.swift */; };
+		DDDD000000000000000000A1 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = DDDD000000000000000000B1 /* Assets.xcassets */; };
+		EEEE000000000000000000A1 /* TaxView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEEE000000000000000000B1 /* TaxView.swift */; };
+		40CD961142230F2C98B9B29E /* FyluAgencyApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B376A4A3F6945839C2B6E104 /* FyluAgencyApp.swift */; };
+		484DA24B28CBFD2FFCCC2F3A /* WorkspaceSwitcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEAB2F251163647AFC39D2B0 /* WorkspaceSwitcher.swift */; };
+		49991F4570436033547A509A /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F99FA030121C4394DAA69F7 /* KeychainService.swift */; };
+		49C0D8324B0C18D4443C3ABC /* Issue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70F44E20FBF5B9E831935D05 /* Issue.swift */; };
+		55CE34277DACE1546DBE9D8E /* OpenAIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CCCF567118988AC1F186C10 /* OpenAIService.swift */; };
+		5DBCC9B7B41B63463D1D267D /* LeadsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CB08591EFAFA4CBA1BB7143 /* LeadsListView.swift */; };
+		5FAE40EE6925839040C4EF46 /* Customer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86B246E0F2A23B4E9C0CBDDB /* Customer.swift */; };
+		601ED83746D0E8DB27E7BD3A /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DF13C78A3B41A66F227380D /* ContentView.swift */; };
+		723F1F503EB6326A62B66CC4 /* InvoicesListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DB392CC85E6C9A2B183876A /* InvoicesListView.swift */; };
+		822D4A8DDC6FFF13693090CC /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD5CB44758048094C9708D78 /* AppState.swift */; };
+		8562CC9BA13ABD04CE3FCE0E /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6CF5AA7EE06E27D3E7635B8 /* DashboardView.swift */; };
+		8BD2E8C0BBA3D37014524940 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7B2007F70A9AAB0EDDCD3A7 /* SettingsView.swift */; };
+		8FBC2968CD0F88BF7007B186 /* InvoiceDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3148B0DB96812B50B2CBAF58 /* InvoiceDetailView.swift */; };
+		99F3FCB5F4A23896731064AF /* CustomersListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0C834C88CDDBA1691B46EE7 /* CustomersListView.swift */; };
+		C4A814CEE8EFAD545401A5B9 /* CustomerDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75DEECBB06F75AF3FCEE064A /* CustomerDetailView.swift */; };
+		D7D788463CACB7A6870D2A2F /* Formatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAF1C44D05620539DA80ED2E /* Formatting.swift */; };
+		EF0519E19981F97BB9699949 /* Workspace.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EE8832059F4AAC24FD999DC /* Workspace.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		19B1248ADAF0F658C0358B57 /* SaveButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaveButton.swift; sourceTree = "<group>"; };
+		1DB392CC85E6C9A2B183876A /* InvoicesListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InvoicesListView.swift; sourceTree = "<group>"; };
+		1F99FA030121C4394DAA69F7 /* KeychainService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainService.swift; sourceTree = "<group>"; };
+		2DF13C78A3B41A66F227380D /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		3148B0DB96812B50B2CBAF58 /* InvoiceDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InvoiceDetailView.swift; sourceTree = "<group>"; };
+		3CCCF567118988AC1F186C10 /* OpenAIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIService.swift; sourceTree = "<group>"; };
+		70F44E20FBF5B9E831935D05 /* Issue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Issue.swift; sourceTree = "<group>"; };
+		75DEECBB06F75AF3FCEE064A /* CustomerDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomerDetailView.swift; sourceTree = "<group>"; };
+		7CB08591EFAFA4CBA1BB7143 /* LeadsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeadsListView.swift; sourceTree = "<group>"; };
+		7CF92F3CF61AC8974707FE06 /* FyluAgency.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FyluAgency.entitlements; sourceTree = "<group>"; };
+		828128D74A08D6453E4CC493 /* UploadedInvoice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UploadedInvoice.swift; sourceTree = "<group>"; };
+		AAAA000000000000000000B1 /* CashIncome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashIncome.swift; sourceTree = "<group>"; };
+		BBBB000000000000000000B1 /* DeductibleExpense.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeductibleExpense.swift; sourceTree = "<group>"; };
+		BBBB000000000000000000B2 /* CostsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CostsListView.swift; sourceTree = "<group>"; };
+		BBBB000000000000000000B3 /* TodoListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoListView.swift; sourceTree = "<group>"; };
+		CCCC000000000000000000B1 /* Todo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Todo.swift; sourceTree = "<group>"; };
+		DDDD000000000000000000B1 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		EEEE000000000000000000B1 /* TaxView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaxView.swift; sourceTree = "<group>"; };
+		86B246E0F2A23B4E9C0CBDDB /* Customer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Customer.swift; sourceTree = "<group>"; };
+		8EE8832059F4AAC24FD999DC /* Workspace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Workspace.swift; sourceTree = "<group>"; };
+		AD5CB44758048094C9708D78 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
+		B376A4A3F6945839C2B6E104 /* FyluAgencyApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FyluAgencyApp.swift; sourceTree = "<group>"; };
+		B6CF5AA7EE06E27D3E7635B8 /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
+		B79764C3C46C01987639F408 /* Lead.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Lead.swift; sourceTree = "<group>"; };
+		B7B2007F70A9AAB0EDDCD3A7 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		BAF1C44D05620539DA80ED2E /* Formatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Formatting.swift; sourceTree = "<group>"; };
+		E0C834C88CDDBA1691B46EE7 /* CustomersListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomersListView.swift; sourceTree = "<group>"; };
+		E6144CDBB36AAC0D6C03A29D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		E90626FD22F43B763B1E0050 /* Invoice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Invoice.swift; sourceTree = "<group>"; };
+		EACA4944494BB313C484CD05 /* OCRService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OCRService.swift; sourceTree = "<group>"; };
+		F098F5875B3C62D2B44E2890 /* PDFRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFRenderer.swift; sourceTree = "<group>"; };
+		F98376DB889C79E142F9C826 /* FyluAgency.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FyluAgency.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		FC91A5D7C184A1B720220D0C /* Cost.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Cost.swift; sourceTree = "<group>"; };
+		FEAB2F251163647AFC39D2B0 /* WorkspaceSwitcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkspaceSwitcher.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		069639012283CFA253BD805B /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				AAAA000000000000000000B1 /* CashIncome.swift */,
+				FC91A5D7C184A1B720220D0C /* Cost.swift */,
+				86B246E0F2A23B4E9C0CBDDB /* Customer.swift */,
+				BBBB000000000000000000B1 /* DeductibleExpense.swift */,
+				CCCC000000000000000000B1 /* Todo.swift */,
+				E90626FD22F43B763B1E0050 /* Invoice.swift */,
+				70F44E20FBF5B9E831935D05 /* Issue.swift */,
+				B79764C3C46C01987639F408 /* Lead.swift */,
+				828128D74A08D6453E4CC493 /* UploadedInvoice.swift */,
+				8EE8832059F4AAC24FD999DC /* Workspace.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		3B2CA02EC9808F1DA64D9554 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				19B1248ADAF0F658C0358B57 /* SaveButton.swift */,
+				FEAB2F251163647AFC39D2B0 /* WorkspaceSwitcher.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		660232DE46001FE92E17FC9F /* FyluAgency */ = {
+			isa = PBXGroup;
+			children = (
+				3B2CA02EC9808F1DA64D9554 /* Components */,
+				069639012283CFA253BD805B /* Models */,
+				9D5730760A2506944BF96472 /* Services */,
+				7EFA0D37EED2F57F465DCAD6 /* Views */,
+				AD5CB44758048094C9708D78 /* AppState.swift */,
+				DDDD000000000000000000B1 /* Assets.xcassets */,
+				7CF92F3CF61AC8974707FE06 /* FyluAgency.entitlements */,
+				B376A4A3F6945839C2B6E104 /* FyluAgencyApp.swift */,
+				E6144CDBB36AAC0D6C03A29D /* Info.plist */,
+			);
+			path = FyluAgency;
+			sourceTree = "<group>";
+		};
+		7EFA0D37EED2F57F465DCAD6 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				2DF13C78A3B41A66F227380D /* ContentView.swift */,
+				BBBB000000000000000000B2 /* CostsListView.swift */,
+				75DEECBB06F75AF3FCEE064A /* CustomerDetailView.swift */,
+				E0C834C88CDDBA1691B46EE7 /* CustomersListView.swift */,
+				B6CF5AA7EE06E27D3E7635B8 /* DashboardView.swift */,
+				3148B0DB96812B50B2CBAF58 /* InvoiceDetailView.swift */,
+				1DB392CC85E6C9A2B183876A /* InvoicesListView.swift */,
+				7CB08591EFAFA4CBA1BB7143 /* LeadsListView.swift */,
+				B7B2007F70A9AAB0EDDCD3A7 /* SettingsView.swift */,
+				EEEE000000000000000000B1 /* TaxView.swift */,
+				BBBB000000000000000000B3 /* TodoListView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		9D5730760A2506944BF96472 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				BAF1C44D05620539DA80ED2E /* Formatting.swift */,
+				1F99FA030121C4394DAA69F7 /* KeychainService.swift */,
+				EACA4944494BB313C484CD05 /* OCRService.swift */,
+				3CCCF567118988AC1F186C10 /* OpenAIService.swift */,
+				F098F5875B3C62D2B44E2890 /* PDFRenderer.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		A75E2A1C41C6C5D3C489F482 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				F98376DB889C79E142F9C826 /* FyluAgency.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		B8DF8184AD3D4AF1A8CDFFA4 = {
+			isa = PBXGroup;
+			children = (
+				660232DE46001FE92E17FC9F /* FyluAgency */,
+				A75E2A1C41C6C5D3C489F482 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		C932A5918166332D17E9B5DB /* FyluAgency */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = ECC381CDDAA065363B73B6AB /* Build configuration list for PBXNativeTarget "FyluAgency" */;
+			buildPhases = (
+				86F5E6F088426D65BAA54974 /* Sources */,
+				DDDD000000000000000000C1 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = FyluAgency;
+			packageProductDependencies = (
+			);
+			productName = FyluAgency;
+			productReference = F98376DB889C79E142F9C826 /* FyluAgency.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		FABCED2F692A8C2B67CB281A /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					C932A5918166332D17E9B5DB = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 92D5569BB8FADB641FE0978B /* Build configuration list for PBXProject "FyluAgency" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = B8DF8184AD3D4AF1A8CDFFA4;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = A75E2A1C41C6C5D3C489F482 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				C932A5918166332D17E9B5DB /* FyluAgency */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		86F5E6F088426D65BAA54974 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				822D4A8DDC6FFF13693090CC /* AppState.swift in Sources */,
+				AAAA000000000000000000A1 /* CashIncome.swift in Sources */,
+				601ED83746D0E8DB27E7BD3A /* ContentView.swift in Sources */,
+				1B13DED7D3F9804CA267A216 /* Cost.swift in Sources */,
+				BBBB000000000000000000A2 /* CostsListView.swift in Sources */,
+				5FAE40EE6925839040C4EF46 /* Customer.swift in Sources */,
+				C4A814CEE8EFAD545401A5B9 /* CustomerDetailView.swift in Sources */,
+				99F3FCB5F4A23896731064AF /* CustomersListView.swift in Sources */,
+				8562CC9BA13ABD04CE3FCE0E /* DashboardView.swift in Sources */,
+				BBBB000000000000000000A1 /* DeductibleExpense.swift in Sources */,
+				CCCC000000000000000000A1 /* Todo.swift in Sources */,
+				EEEE000000000000000000A1 /* TaxView.swift in Sources */,
+				BBBB000000000000000000A3 /* TodoListView.swift in Sources */,
+				D7D788463CACB7A6870D2A2F /* Formatting.swift in Sources */,
+				40CD961142230F2C98B9B29E /* FyluAgencyApp.swift in Sources */,
+				2C8EC815604492FBC8575BBB /* Invoice.swift in Sources */,
+				8FBC2968CD0F88BF7007B186 /* InvoiceDetailView.swift in Sources */,
+				723F1F503EB6326A62B66CC4 /* InvoicesListView.swift in Sources */,
+				49C0D8324B0C18D4443C3ABC /* Issue.swift in Sources */,
+				49991F4570436033547A509A /* KeychainService.swift in Sources */,
+				0E1A46188A250B244CD34E7D /* Lead.swift in Sources */,
+				5DBCC9B7B41B63463D1D267D /* LeadsListView.swift in Sources */,
+				1252F574CB4C207939D762C5 /* OCRService.swift in Sources */,
+				55CE34277DACE1546DBE9D8E /* OpenAIService.swift in Sources */,
+				22F14BD63A75B99E3D7A24CE /* PDFRenderer.swift in Sources */,
+				02944ECB74F312AF94D585BD /* SaveButton.swift in Sources */,
+				8BD2E8C0BBA3D37014524940 /* SettingsView.swift in Sources */,
+				3FE577C0FFEB7C132BAD2A31 /* UploadedInvoice.swift in Sources */,
+				EF0519E19981F97BB9699949 /* Workspace.swift in Sources */,
+				484DA24B28CBFD2FFCCC2F3A /* WorkspaceSwitcher.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXResourcesBuildPhase section */
+		DDDD000000000000000000C1 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				DDDD000000000000000000A1 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		221B89D6F186CB94332C552B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = NO;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.10;
+			};
+			name = Release;
+		};
+		63CE1B6C8DE89D33E026ACD2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEAD_CODE_STRIPPING = YES;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = NO;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.10;
+			};
+			name = Debug;
+		};
+		68105F0E3799060D1BBD209F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = FyluAgency/FyluAgency.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = FyluAgency/Info.plist;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2026 Fylu";
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.fylu.agency;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		B80240D010ABF1A463A0086F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = FyluAgency/FyluAgency.entitlements;
+				COMBINE_HIDPI_IMAGES = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = FyluAgency/Info.plist;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "© 2026 Fylu";
+				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.fylu.agency;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		92D5569BB8FADB641FE0978B /* Build configuration list for PBXProject "FyluAgency" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				63CE1B6C8DE89D33E026ACD2 /* Debug */,
+				221B89D6F186CB94332C552B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		ECC381CDDAA065363B73B6AB /* Build configuration list for PBXNativeTarget "FyluAgency" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B80240D010ABF1A463A0086F /* Debug */,
+				68105F0E3799060D1BBD209F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = FABCED2F692A8C2B67CB281A /* Project object */;
+}

@@ -1,9 +1,10 @@
-# Xcode
-*.xcodeproj/
+# Xcode — Projekt-Datei selbst muss mit, nur User-Daten ausschließen
 build/
 DerivedData/
+xcuserdata/
 *.xcuserdatad/
 *.xcuserstate
+project.xcworkspace/xcuserdata/
 
 # Swift Package Manager
 .swiftpm/

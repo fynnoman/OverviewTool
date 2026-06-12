@@ -75,6 +75,21 @@ struct CustomersListView: View {
                         }
                     }
                     .searchable(text: $searchText, prompt: "Kunden suchen")
+                    .contextMenu(forSelectionType: UUID.self) { ids in
+                        Button("Öffnen") {
+                            if let id = ids.first, let c = customers.first(where: { $0.id == id }) {
+                                selectedCustomer = c
+                            }
+                        }
+                        Divider()
+                        Button("Löschen", role: .destructive) {
+                            deleteCustomers(withIDs: ids)
+                        }
+                    } primaryAction: { ids in
+                        if let id = ids.first, let c = customers.first(where: { $0.id == id }) {
+                            selectedCustomer = c
+                        }
+                    }
                 }
             }
             .navigationDestination(item: $selectedCustomer) { c in
@@ -86,6 +101,16 @@ struct CustomersListView: View {
                 selectedCustomer = newCustomer
             }
         }
+    }
+
+    private func deleteCustomers(withIDs ids: Set<UUID>) {
+        for id in ids {
+            if let c = customers.first(where: { $0.id == id }) {
+                if selectedCustomer?.id == c.id { selectedCustomer = nil }
+                modelContext.delete(c)
+            }
+        }
+        try? modelContext.save()
     }
 }
 

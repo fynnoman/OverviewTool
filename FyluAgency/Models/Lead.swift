@@ -35,12 +35,16 @@ final class Lead {
     var source: String
     var statusRaw: String
     var expectedValue: Double?
+    var offerDescription: String?   // wofür das Angebot ist, z. B. „Website-Setup + SEO"
     var notes: String
     var lastContactAt: Date?
     var createdAt: Date
     var updatedAt: Date
 
     var workspace: Workspace?
+
+    @Relationship(deleteRule: .cascade, inverse: \Issue.lead)
+    var issues: [Issue] = []
 
     var status: LeadStatus {
         get { LeadStatus(rawValue: statusRaw) ?? .new }
@@ -56,6 +60,7 @@ final class Lead {
         source: String = "",
         status: LeadStatus = .new,
         expectedValue: Double? = nil,
+        offerDescription: String? = nil,
         notes: String = ""
     ) {
         self.id = id
@@ -66,6 +71,7 @@ final class Lead {
         self.source = source
         self.statusRaw = status.rawValue
         self.expectedValue = expectedValue
+        self.offerDescription = (offerDescription?.isEmpty ?? true) ? nil : offerDescription
         self.notes = notes
         self.createdAt = Date()
         self.updatedAt = Date()

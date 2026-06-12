@@ -119,8 +119,7 @@ struct SettingsView: View {
                     .frame(minHeight: 80)
                     .border(Color.gray.opacity(0.2))
                 }
-                Button("Speichern") { try? modelContext.save() }
-                    .buttonStyle(.borderedProminent)
+                SaveButton { try? modelContext.save() }
             }
         }
     }
@@ -137,7 +136,7 @@ struct SettingsView: View {
                 LabeledField(label: "BIC", text: Binding(
                     get: { workspace.bic }, set: { workspace.bic = $0 }
                 ))
-                Button("Speichern") { try? modelContext.save() }
+                SaveButton { try? modelContext.save() }
             }
         }
     }
@@ -173,7 +172,7 @@ struct SettingsView: View {
                 }
                 Text("Nächste Rechnungs-Nr.: \(workspace.invoiceNumberPrefix)-\(Calendar.current.component(.year, from: Date()))-\(String(format: "%04d", workspace.invoiceNumberCounter))")
                     .font(.caption).foregroundStyle(.secondary)
-                Button("Speichern") { try? modelContext.save() }
+                SaveButton { try? modelContext.save() }
             }
         }
     }
@@ -193,7 +192,7 @@ struct SettingsView: View {
                         get: { workspace.layoutAccentHex }, set: { workspace.layoutAccentHex = $0 }
                     )).textFieldStyle(.roundedBorder)
                 }
-                Button("Speichern") { try? modelContext.save() }
+                SaveButton { try? modelContext.save() }
             }
         }
     }

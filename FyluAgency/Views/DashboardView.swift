@@ -3,15 +3,27 @@ import SwiftData
 import Charts
 
 enum DashboardRange: String, CaseIterable, Identifiable {
-    case today, week, month, year, all
+    case today, week, month, quarter, year, all
     var id: String { rawValue }
     var title: String {
         switch self {
-        case .today: "Heute"
-        case .week:  "Diese Woche"
-        case .month: "Diesen Monat"
-        case .year:  "Dieses Jahr"
-        case .all:   "Gesamt"
+        case .today:   "Heute"
+        case .week:    "Woche"
+        case .month:   "Monat"
+        case .quarter: "Quartal"
+        case .year:    "Jahr"
+        case .all:     "Gesamt"
+        }
+    }
+
+    var longTitle: String {
+        switch self {
+        case .today:   "Heute"
+        case .week:    "Diese Woche"
+        case .month:   "Diesen Monat"
+        case .quarter: "Dieses Quartal"
+        case .year:    "Dieses Jahr"
+        case .all:     "Gesamt"
         }
     }
 
@@ -19,12 +31,25 @@ enum DashboardRange: String, CaseIterable, Identifiable {
         let cal = Calendar.current
         let now = Date()
         switch self {
-        case .today: return cal.startOfDay(for: now)
-        case .week:  return cal.date(from: cal.dateComponents([.yearForWeekOfYear, .weekOfYear], from: now))
-        case .month: return cal.date(from: cal.dateComponents([.year, .month], from: now))
-        case .year:  return cal.date(from: cal.dateComponents([.year], from: now))
-        case .all:   return nil
+        case .today:   return cal.startOfDay(for: now)
+        case .week:    return cal.date(from: cal.dateComponents([.yearForWeekOfYear, .weekOfYear], from: now))
+        case .month:   return cal.date(from: cal.dateComponents([.year, .month], from: now))
+        case .quarter:
+            let month = cal.component(.month, from: now)
+            let qStartMonth = ((month - 1) / 3) * 3 + 1
+            var comps = cal.dateComponents([.year], from: now)
+            comps.month = qStartMonth
+            comps.day = 1
+            return cal.date(from: comps)
+        case .year:    return cal.date(from: cal.dateComponents([.year], from: now))
+        case .all:     return nil
         }
+    }
+
+    /// Q1 / Q2 / Q3 / Q4 — nur sinnvoll für .quarter.
+    static var currentQuarterLabel: String {
+        let month = Calendar.current.component(.month, from: Date())
+        return "Q\((month - 1) / 3 + 1)"
     }
 }
 
@@ -34,6 +59,8 @@ struct DashboardView: View {
     @State private var range: DashboardRange = .month
     @State private var upsells: [(customer: Customer, headline: String, reason: String, amount: Double)] = []
     @State private var isLoadingUpsells = false
+    @State private var upsellError: String?
+    @State private var upsellSource: String?
 
     private var invoices: [Invoice] {
         workspace.customers.flatMap(\.invoices)
@@ -55,6 +82,98 @@ struct DashboardView: View {
     }
     private var openTotal: Double {
         filteredInvoices.filter { $0.status != .paid }.reduce(0) { $0 + $1.total }
+    }
+
+    private var filteredCustomerCosts: [Cost] {
+        let start = range.startDate()
+        return workspace.customers.flatMap(\.costs).filter { cost in
+            guard let start else { return true }
+            let when = cost.dueDate ?? cost.createdAt
+            return when >= start
+        }
+    }
+
+    private var costsTotal: Double {
+        filteredCustomerCosts.reduce(0) { $0 + $1.amount }
+    }
+
+    private var cashIncomeTotal: Double {
+        let start = range.startDate()
+        return workspace.customers.flatMap(\.cashIncomes).filter { cash in
+            guard let start else { return true }
+            return cash.date >= start
+        }.reduce(0) { $0 + $1.amount }
+    }
+
+    private var profitTotal: Double { grossTotal + cashIncomeTotal - costsTotal }
+
+    // —— Steuer-Schätzung auf den Range-Profit ——
+    // Tax wird auf JAHRES-zvE berechnet, dann anteilig auf den Range-Profit angewandt.
+    private var workspaceYearProfit: Double {
+        let cal = Calendar.current
+        let year = cal.component(.year, from: Date())
+        let yearInvoiceNet = workspace.customers.flatMap(\.invoices)
+            .filter { cal.component(.year, from: $0.date) == year }
+            .reduce(0) { $0 + $1.subtotal }
+        let yearCosts = workspace.customers.flatMap(\.costs)
+            .filter { c in cal.component(.year, from: c.dueDate ?? c.createdAt) == year }
+            .reduce(0) { $0 + $1.amount }
+        let yearDeductibleNet = workspace.deductibleExpenses
+            .filter { cal.component(.year, from: $0.date) == year }
+            .reduce(0) { $0 + $1.net }
+        return yearInvoiceNet - yearCosts - yearDeductibleNet
+    }
+
+    private var effectiveTaxRate: Double {
+        let yp = workspaceYearProfit
+        guard yp > 0 else { return 0 }
+        return TaxView.germanIncomeTax(zvE: yp) / yp
+    }
+
+    /// USt-Zahllast im aktuellen Range: MwSt aus Rechnungen − Vorsteuer aus absetzbaren Ausgaben.
+    /// Cash-Einnahmen bleiben außen vor (steuerfrei). Mindestens 0 — Vorsteuer-Überhänge
+    /// werden im Folgemonat verrechnet, drücken aber nicht den aktuellen Gewinn nach oben.
+    private var ustZahllastInRange: Double {
+        max(0, vatTotal - vorsteuerTotal)
+    }
+
+    /// Anteilige Einkommensteuer auf den Gewinn im aktuellen Range.
+    private var incomeTaxOnRangeProfit: Double {
+        profitTotal * effectiveTaxRate
+    }
+
+    /// Tatsächlich übrig bleibendes Geld: Gewinn brutto − USt-Zahllast − geschätzte ESt.
+    private var profitAfterTaxesTotal: Double {
+        profitTotal - ustZahllastInRange - incomeTaxOnRangeProfit
+    }
+
+    private var filteredDeductibleExpenses: [DeductibleExpense] {
+        let start = range.startDate()
+        return workspace.deductibleExpenses.filter { e in
+            guard let start else { return true }
+            return e.date >= start
+        }
+    }
+
+    private var deductibleTotal: Double {
+        filteredDeductibleExpenses.reduce(0) { $0 + $1.amount }
+    }
+
+    private var vorsteuerTotal: Double {
+        filteredDeductibleExpenses.reduce(0) { $0 + $1.vatAmount }
+    }
+
+    private var openIssuesValue: Double {
+        workspace.customers.flatMap(\.issues).filter { !$0.done }.compactMap(\.price).reduce(0, +)
+    }
+    private var openIssuesCount: Int {
+        workspace.customers.flatMap(\.issues).filter { !$0.done }.count
+    }
+    private var openLeadValue: Double {
+        workspace.leads
+            .filter { $0.status != .lost && $0.status != .won }
+            .compactMap(\.expectedValue)
+            .reduce(0, +)
     }
 
     var body: some View {
@@ -87,12 +206,68 @@ struct DashboardView: View {
     }
 
     private var kpiRow: some View {
-        HStack(spacing: 12) {
-            KpiCard(title: "Brutto", value: Money.format(grossTotal), accent: true)
-            KpiCard(title: "Netto", value: Money.format(netTotal))
-            KpiCard(title: "MwSt.", value: Money.format(vatTotal), muted: true)
-            KpiCard(title: "Rechnungen", value: "\(filteredInvoices.count)", muted: true)
+        VStack(spacing: 12) {
+            HStack(spacing: 12) {
+                KpiCard(title: "Brutto (steuerpflichtig)", value: Money.format(grossTotal), accent: true)
+                KpiCard(
+                    title: "Bar (ohne Rechnung)",
+                    value: Money.format(cashIncomeTotal),
+                    tone: cashIncomeTotal > 0 ? .positive : .neutral
+                )
+                KpiCard(title: "Kosten", value: Money.format(costsTotal), muted: true)
+                KpiCard(
+                    title: "Gewinn (nach Steuern)",
+                    value: Money.format(profitAfterTaxesTotal),
+                    tone: profitAfterTaxesTotal < 0 ? .danger : (profitAfterTaxesTotal > 0 ? .positive : .neutral)
+                )
+            }
+            HStack(spacing: 12) {
+                KpiCard(title: "Netto", value: Money.format(netTotal), muted: true)
+                KpiCard(title: "MwSt.", value: Money.format(vatTotal), muted: true)
+                KpiCard(title: "Absetzbare Ausgaben", value: Money.format(deductibleTotal), muted: true)
+                KpiCard(title: "Vorsteuer", value: Money.format(vorsteuerTotal), muted: true)
+            }
+            HStack(spacing: 12) {
+                KpiCard(
+                    title: "Ausstehend (offene Aufträge)",
+                    value: "\(openIssuesCount) · \(Money.format(openIssuesValue))",
+                    tone: openIssuesValue > 0 ? .positive : .neutral
+                )
+                KpiCard(
+                    title: "Lead-Pipeline",
+                    value: Money.format(openLeadValue),
+                    tone: openLeadValue > 0 ? .positive : .neutral
+                )
+                KpiCard(
+                    title: "Potenzial gesamt",
+                    value: Money.format(openIssuesValue + openLeadValue),
+                    accent: openIssuesValue + openLeadValue > 0
+                )
+                KpiCard(title: "Kunden", value: "\(workspace.customers.count)", muted: true)
+            }
+            if openIssuesValue > 0 || openLeadValue > 0 {
+                HStack(spacing: 6) {
+                    Image(systemName: "arrow.up.right.circle.fill")
+                        .foregroundStyle(Color.green)
+                    Text(potenzialHinweisText)
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.top, 4)
+            }
         }
+    }
+
+    private var potenzialHinweisText: String {
+        var parts: [String] = []
+        if openIssuesValue > 0 {
+            parts.append("Wenn du alle offenen Aufträge abschließt, kommen \(Money.format(openIssuesValue)) rein.")
+        }
+        if openLeadValue > 0 {
+            parts.append("Aus aktiven Leads sind weitere \(Money.format(openLeadValue)) möglich.")
+        }
+        return parts.joined(separator: " ")
     }
 
     private var chartCard: some View {
@@ -130,8 +305,34 @@ struct DashboardView: View {
         }
     }
 
+    private func upsellAlreadyTodo(_ u: (customer: Customer, headline: String, reason: String, amount: Double)) -> Bool {
+        workspace.todos.contains { todo in
+            !todo.done
+                && todo.customer?.id == u.customer.id
+                && todo.title.localizedCaseInsensitiveCompare(u.headline) == .orderedSame
+        }
+    }
+
+    private var visibleUpsells: [(customer: Customer, headline: String, reason: String, amount: Double)] {
+        upsells.filter { !upsellAlreadyTodo($0) }
+    }
+
+    private func addUpsellAsTodo(_ u: (customer: Customer, headline: String, reason: String, amount: Double)) {
+        let detailLine = u.amount > 0
+            ? "\(u.reason)\n\nGeschätztes Umsatzpotenzial: \(Money.format(u.amount))"
+            : u.reason
+        let todo = Todo(
+            title: u.headline,
+            details: detailLine
+        )
+        todo.workspace = workspace
+        todo.customer = u.customer
+        modelContext.insert(todo)
+        try? modelContext.save()
+    }
+
     private var upsellCard: some View {
-        Card("Wo holst du noch Geld raus?", subtitle: "KI-Vorschläge") {
+        Card("Wo holst du noch Geld raus?", subtitle: upsellSource ?? "KI-Vorschläge") {
             if isLoadingUpsells {
                 HStack(spacing: 8) {
                     ProgressView().controlSize(.small)
@@ -139,15 +340,37 @@ struct DashboardView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .center)
                 .padding(.vertical, 12)
+            } else if workspace.customers.isEmpty {
+                Text("Leg erst Kunden an — dann gibt's hier passende Upsell-Vorschläge.")
+                    .font(.callout).foregroundStyle(.secondary).padding(.vertical, 8)
             } else if upsells.isEmpty {
-                Text("Sobald Kunden mit Rechnungen vorhanden sind und ein API-Key in den Einstellungen liegt, kommen hier KI-Vorschläge.")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-                    .padding(.vertical, 8)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Noch keine Vorschläge geladen.")
+                        .font(.callout).foregroundStyle(.secondary)
+                    if let err = upsellError {
+                        Text(err)
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                            .padding(8)
+                            .background(Color.orange.opacity(0.1))
+                            .clipShape(RoundedRectangle(cornerRadius: 6))
+                    }
+                }
+                .padding(.vertical, 8)
+            } else if visibleUpsells.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    Label("Alle Empfehlungen sind schon in der Aufgabenliste.", systemImage: "checkmark.seal.fill")
+                        .font(.callout)
+                        .foregroundStyle(Color.green)
+                    Text("Im Reiter Aufgaben kannst du sie abarbeiten — danach erscheinen hier neue Vorschläge.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+                .padding(.vertical, 8)
             } else {
                 VStack(spacing: 8) {
-                    ForEach(upsells.indices, id: \.self) { idx in
-                        let s = upsells[idx]
+                    let vis = visibleUpsells
+                    ForEach(vis.indices, id: \.self) { idx in
+                        let s = vis[idx]
                         HStack(alignment: .top, spacing: 12) {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(s.customer.name)
@@ -160,6 +383,15 @@ struct DashboardView: View {
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                                     .lineLimit(3)
+                                Button {
+                                    addUpsellAsTodo(s)
+                                } label: {
+                                    Label("Auf meine Aufgabenliste", systemImage: "plus.circle")
+                                        .font(.caption)
+                                }
+                                .buttonStyle(.bordered)
+                                .controlSize(.small)
+                                .padding(.top, 4)
                             }
                             Spacer()
                             Text("+\(Money.format(s.amount))")
@@ -167,9 +399,18 @@ struct DashboardView: View {
                                 .foregroundStyle(.green)
                         }
                         .padding(.vertical, 6)
-                        if idx < upsells.count - 1 {
+                        if idx < vis.count - 1 {
                             Divider()
                         }
+                    }
+                    if let err = upsellError {
+                        Text(err)
+                            .font(.caption)
+                            .foregroundStyle(.orange)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(6)
+                            .background(Color.orange.opacity(0.1))
+                            .clipShape(RoundedRectangle(cornerRadius: 6))
                     }
                 }
             }
@@ -177,7 +418,7 @@ struct DashboardView: View {
                 Task { await refreshUpsells(force: true) }
             }
             .controlSize(.small)
-            .disabled(isLoadingUpsells)
+            .disabled(isLoadingUpsells || workspace.customers.isEmpty)
         }
     }
 
@@ -212,7 +453,7 @@ struct DashboardView: View {
             .filter { !$0.done }
             .sorted(by: { $0.createdAt > $1.createdAt })
             .prefix(8)
-        return Card("Offene Aufgaben", subtitle: "\(issues.count)") {
+        return Card("Offene Kundenwünsche", subtitle: "\(issues.count) — getrennt von deiner Todo-Liste") {
             if issues.isEmpty {
                 Text("Alles erledigt.").font(.callout).foregroundStyle(.secondary).padding(.vertical, 8)
             } else {
@@ -305,6 +546,10 @@ struct DashboardView: View {
             case .month:
                 let day = cal.component(.day, from: d)
                 key = "md-\(day)"; label = "\(day)."; sortKey = day
+            case .quarter:
+                let m = cal.component(.month, from: d)
+                let labels = ["Jan","Feb","Mär","Apr","Mai","Jun","Jul","Aug","Sep","Okt","Nov","Dez"]
+                key = "qmo-\(m)"; label = labels[m - 1]; sortKey = m
             case .year:
                 let m = cal.component(.month, from: d)
                 let labels = ["Jan","Feb","Mär","Apr","Mai","Jun","Jul","Aug","Sep","Okt","Nov","Dez"]
@@ -327,58 +572,113 @@ struct DashboardView: View {
 
     @MainActor
     private func refreshUpsells(force: Bool = false) async {
-        if upsells.count > 0 && !force { return }
-        guard let service = OpenAIService(workspace: workspace) else {
-            upsells = heuristicUpsells()
+        // Don't auto-rerun if we already loaded — only manual refresh forces.
+        if !upsells.isEmpty && !force { return }
+        guard !workspace.customers.isEmpty else {
+            upsells = []
+            upsellError = nil
             return
         }
+
         isLoadingUpsells = true
         defer { isLoadingUpsells = false }
+        upsellError = nil
+        upsellSource = nil
+
+        // Heuristic baseline first — covers the "no API key / API down" case.
+        let heur = heuristicUpsells()
+
+        guard let service = OpenAIService(workspace: workspace) else {
+            upsells = heur
+            upsellSource = "Heuristik (kein API-Key)"
+            if heur.isEmpty {
+                upsellError = "Hinterleg in den Einstellungen einen OpenAI-Key, dann kommen pro Kunde individuelle Vorschläge."
+            }
+            return
+        }
+
+        // Up to 5 most-relevant customers (most invoiced first; then newest).
+        let prioritized = workspace.customers.sorted { lhs, rhs in
+            if lhs.totalInvoiced != rhs.totalInvoiced {
+                return lhs.totalInvoiced > rhs.totalInvoiced
+            }
+            return lhs.createdAt > rhs.createdAt
+        }.prefix(5)
 
         var results: [(customer: Customer, headline: String, reason: String, amount: Double)] = []
-        let payingCustomers = workspace.customers.filter { !$0.invoices.isEmpty }.prefix(5)
-        for customer in payingCustomers {
+        var firstError: String?
+
+        for customer in prioritized {
             let summary = customerSummary(customer)
-            if let r = try? await service.suggestUpsell(for: summary) {
-                results.append((customer, r.headline, r.reason, r.amount))
+            do {
+                if let r = try await service.suggestUpsell(for: summary) {
+                    results.append((customer, r.headline, r.reason, r.amount))
+                }
+            } catch {
+                if firstError == nil {
+                    firstError = "OpenAI: \(error.localizedDescription)"
+                }
             }
         }
+
         if results.isEmpty {
-            results = heuristicUpsells()
+            upsells = heur
+            upsellSource = heur.isEmpty ? nil : "Heuristik-Fallback"
+            upsellError = firstError ?? (heur.isEmpty
+                ? "Konnte keine Vorschläge generieren. Prüf das Modell in den Einstellungen oder ergänze Leistungen pro Kunde."
+                : nil)
+        } else {
+            upsells = results.sorted(by: { $0.amount > $1.amount })
+            upsellSource = "OpenAI (\(workspace.openAIModel))"
+            upsellError = firstError
         }
-        upsells = results.sorted(by: { $0.amount > $1.amount })
     }
 
     private func customerSummary(_ c: Customer) -> String {
-        let services = Set(c.invoices.flatMap(\.items).map(\.details)).joined(separator: ", ")
+        let services = Set(c.invoices.flatMap(\.items).map(\.details))
+            .filter { !$0.isEmpty }
+            .joined(separator: ", ")
+        let openWishes = c.issues.filter { !$0.done }.prefix(5).map(\.title).joined(separator: ", ")
         let lastDate = c.invoices.sorted(by: { $0.date > $1.date }).first?.date
-        let daysSince = lastDate.map { Int(Date().timeIntervalSince($0) / 86400) } ?? 999
+        let daysSince = lastDate.map { Int(Date().timeIntervalSince($0) / 86400) } ?? -1
+
         return """
-        Kunde: \(c.name)
-        Bisherige Leistungen: \(services.isEmpty ? "—" : services)
-        Gesamtumsatz: \(Int(c.totalInvoiced)) €
-        Tage seit letzter Rechnung: \(daysSince)
-        Offene Aufgaben: \(c.openIssuesCount)
+        Kunde: \(c.name)\(c.company.isEmpty ? "" : " (\(c.company))")
+        Bisherige Leistungen: \(services.isEmpty ? "noch keine Rechnung gestellt" : services)
+        Gesamtumsatz bisher: \(Int(c.totalInvoiced)) €
+        Tage seit letzter Rechnung: \(daysSince < 0 ? "noch nie" : "\(daysSince)")
+        Offene Aufgaben: \(c.openIssuesCount)\(openWishes.isEmpty ? "" : " (\(openWishes))")
+        Wiederkehrend pro Monat: \(Int(c.monthlyRecurringCost)) €
         """
     }
 
     private func heuristicUpsells() -> [(customer: Customer, headline: String, reason: String, amount: Double)] {
         var out: [(Customer, String, String, Double)] = []
-        for c in workspace.customers where !c.invoices.isEmpty {
+        for c in workspace.customers {
+            // Customers without invoices yet — suggest starting a service relationship
+            if c.invoices.isEmpty {
+                out.append((c, "Erstes Angebot platzieren — Website-Setup ab 800 €",
+                            "Noch keine Rechnung. Klassischer Einstieg ist ein Website-Projekt.", 800))
+                continue
+            }
+
             let services = c.invoices.flatMap(\.items).map { $0.details.lowercased() }
             let has = { (label: String) in services.contains { $0.contains(label) } }
             if !has("seo") {
                 out.append((c, "SEO-Paket anbieten — 200 €/Monat",
                             "Kunde hat noch kein SEO — klassischer Folge-Upsell.", 200))
-            } else if !has("ads") {
+            } else if !has("ads") && !has("google") {
                 out.append((c, "Google Ads Setup + 200 € Betreuung/Monat",
                             "Kunde hat SEO aber keine bezahlte Reichweite.", 200))
-            } else {
+            } else if !has("wartung") && !has("pflege") {
                 out.append((c, "Wartungspaket für 99 €/Monat",
                             "Wiederkehrender Umsatz statt nur Projekt-Buchungen.", 99))
+            } else {
+                out.append((c, "Performance-Audit für 350 €",
+                            "Bestandskunde — guter Aufhänger für Check-in.", 350))
             }
         }
-        return Array(out.prefix(5))
+        return Array(out.sorted(by: { $0.3 > $1.3 }).prefix(5))
     }
 }
 
@@ -391,9 +691,16 @@ private struct Header: View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Dashboard").font(.title2).fontWeight(.semibold)
-                Text("Übersicht für \(range.title.lowercased()).")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
+                HStack(spacing: 6) {
+                    Text("Übersicht für \(range.longTitle.lowercased()).")
+                    if range == .quarter {
+                        Text(DashboardRange.currentQuarterLabel)
+                            .font(.callout.monospaced())
+                            .foregroundStyle(Color.accentColor)
+                    }
+                }
+                .font(.callout)
+                .foregroundStyle(.secondary)
             }
             Spacer()
             Picker("Zeitraum", selection: $range) {
@@ -407,11 +714,42 @@ private struct Header: View {
     }
 }
 
+enum KpiTone {
+    case neutral, positive, danger
+}
+
 struct KpiCard: View {
     let title: String
     let value: String
     var accent: Bool = false
     var muted: Bool = false
+    var tone: KpiTone = .neutral
+
+    private var valueColor: AnyShapeStyle {
+        switch tone {
+        case .positive: AnyShapeStyle(Color.green)
+        case .danger:   AnyShapeStyle(Color.red)
+        case .neutral:  muted ? AnyShapeStyle(.secondary) : AnyShapeStyle(.primary)
+        }
+    }
+
+    private var bgFill: AnyShapeStyle {
+        if accent { return AnyShapeStyle(Color.accentColor.gradient) }
+        switch tone {
+        case .positive: return AnyShapeStyle(Color.green.opacity(0.08))
+        case .danger:   return AnyShapeStyle(Color.red.opacity(0.08))
+        case .neutral:  return AnyShapeStyle(Color.gray.opacity(0.06))
+        }
+    }
+
+    private var strokeColor: Color {
+        switch tone {
+        case .positive: Color.green.opacity(0.3)
+        case .danger:   Color.red.opacity(0.3)
+        case .neutral:  Color.gray.opacity(0.15)
+        }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(title.uppercased())
@@ -421,16 +759,15 @@ struct KpiCard: View {
             Text(value)
                 .font(.title3)
                 .fontWeight(.semibold)
-                .foregroundStyle(muted ? AnyShapeStyle(.secondary) : AnyShapeStyle(.primary))
+                .foregroundStyle(valueColor)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
         .background(
-            RoundedRectangle(cornerRadius: 10)
-                .fill(accent ? AnyShapeStyle(Color.accentColor.gradient) : AnyShapeStyle(Color.gray.opacity(0.06)))
+            RoundedRectangle(cornerRadius: 10).fill(bgFill)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 10).stroke(Color.gray.opacity(0.15))
+            RoundedRectangle(cornerRadius: 10).stroke(strokeColor)
         )
     }
 }

@@ -26,8 +26,6 @@ enum PDFRenderer {
 
         renderer.render { _, render in
             context.beginPDFPage(nil)
-            context.translateBy(x: 0, y: pageSize.height)
-            context.scaleBy(x: 1, y: -1)
             render(context)
             context.endPDFPage()
         }

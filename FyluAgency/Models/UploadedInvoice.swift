@@ -14,6 +14,12 @@ final class UploadedInvoice {
     var statusRaw: String
     var uploadedAt: Date
 
+    /// If the upload was successfully parsed, we mirror it into a normal
+    /// `Invoice` so it shows up in the global list and customer KPIs.
+    /// `nil` means: no invoice generated yet (either parse failed or this
+    /// upload predates the auto-sync).
+    var invoiceID: UUID?
+
     var customer: Customer?
 
     /// Raw status: pending | parsed | manual (couldn't parse)

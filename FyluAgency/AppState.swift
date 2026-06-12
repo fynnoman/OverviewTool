@@ -3,7 +3,7 @@ import SwiftData
 import Observation
 
 enum SidebarSection: String, Hashable, Identifiable, CaseIterable {
-    case dashboard, customers, leads, invoices, settings
+    case dashboard, customers, leads, invoices, todos, costs, taxes, settings
     var id: String { rawValue }
     var title: String {
         switch self {
@@ -11,6 +11,9 @@ enum SidebarSection: String, Hashable, Identifiable, CaseIterable {
         case .customers: "Kunden"
         case .leads:     "Leads"
         case .invoices:  "Rechnungen"
+        case .todos:     "Aufgaben"
+        case .costs:     "Kosten"
+        case .taxes:     "Steuern"
         case .settings:  "Einstellungen"
         }
     }
@@ -20,6 +23,9 @@ enum SidebarSection: String, Hashable, Identifiable, CaseIterable {
         case .customers: "person.2"
         case .leads:     "sparkles"
         case .invoices:  "doc.text"
+        case .todos:     "checklist"
+        case .costs:     "eurosign.circle"
+        case .taxes:     "percent"
         case .settings:  "gearshape"
         }
     }
