@@ -74,6 +74,9 @@ final class Workspace {
     @Relationship(deleteRule: .cascade, inverse: \Todo.workspace)
     var todos: [Todo] = []
 
+    @Relationship(deleteRule: .cascade, inverse: \Idea.workspace)
+    var ideas: [Idea] = []
+
     init(
         id: UUID = UUID(),
         name: String,

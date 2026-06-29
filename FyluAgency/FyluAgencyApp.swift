@@ -21,7 +21,8 @@ struct FyluAgencyApp: App {
             Todo.self,
             Quote.self,
             QuoteItem.self,
-            Appointment.self
+            Appointment.self,
+            Idea.self
         ])
         let config = ModelConfiguration(
             "FyluAgency",
