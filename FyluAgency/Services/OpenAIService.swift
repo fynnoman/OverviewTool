@@ -55,6 +55,64 @@ struct UpsellSuggestion: Codable {
     var amount: Double
 }
 
+/// Beschreibt das Business hinter einem Workspace — wird in die
+/// AI-Prompts gestopft, damit Upsell-Vorschläge zur Branche passen
+/// (Webdesign, SaaS, Beratung, …) statt generisch geraten zu werden.
+struct WorkspaceAIProfile {
+    /// Kurzname der Branche, z. B. "Webdesign-Agentur", "B2B-SaaS".
+    var businessKind: String
+    /// Freitext-Beschreibung was verkauft wird, an wen, USP.
+    var businessProfile: String
+    /// Optional: typische Upsells als Hinweis ans Modell.
+    var upsellPlaybook: String
+    /// Anzeigename des Workspaces — als Hinweis ans Modell, wenn kein
+    /// echtes Profil hinterlegt ist (z. B. "Taskey" → Modell soll nicht
+    /// blind Webdesign empfehlen).
+    var workspaceName: String
+
+    /// `true`, wenn der User wirklich etwas konfiguriert hat.
+    var hasContent: Bool {
+        !businessKind.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            || !businessProfile.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            || !upsellPlaybook.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    init(
+        businessKind: String = "",
+        businessProfile: String = "",
+        upsellPlaybook: String = "",
+        workspaceName: String = ""
+    ) {
+        self.businessKind = businessKind
+        self.businessProfile = businessProfile
+        self.upsellPlaybook = upsellPlaybook
+        self.workspaceName = workspaceName
+    }
+
+    init(workspace: Workspace) {
+        self.businessKind = workspace.businessKind ?? ""
+        self.businessProfile = workspace.businessProfile ?? ""
+        self.upsellPlaybook = workspace.aiUpsellPlaybook ?? ""
+        self.workspaceName = workspace.name
+    }
+}
+
+/// Result of asking the model whether an email confirms a concrete appointment.
+struct ExtractedAppointment: Codable {
+    var accepted: Bool
+    var title: String?
+    var startsAt: String?    // ISO 8601, may include timezone
+    var endsAt: String?
+    var location: String?
+    var allDay: Bool?
+}
+
+/// Reply draft generated for a received email — subject + body, nothing persisted.
+struct DraftedReply: Codable {
+    var subject: String
+    var body: String
+}
+
 /// Thin client against OpenAI's Responses API. We deliberately keep
 /// requests synchronous + structured (JSON schema) so callers don't
 /// have to parse free-form text. The active workspace decides which
@@ -132,8 +190,15 @@ struct OpenAIService {
         Extrahiere Brutto-Endbetrag, Netto-Summe, Mehrwertsteuer-Betrag und \
         Rechnungsdatum. Wenn ein Wert nicht eindeutig erkennbar ist: null. \
         Bevorzuge "Gesamtbetrag", "Endbetrag", "Brutto", "Total" für total. \
-        Wenn nur Brutto und VAT erkennbar sind, berechne net = total - vat. \
-        Datum als ISO yyyy-MM-dd.
+        Wenn nur Brutto und VAT erkennbar sind, berechne net = total - vat.
+
+        Datum-Regeln (WICHTIG):
+        - Gib das RECHNUNGSDATUM zurück, NICHT Leistungs-, Fällig- oder Zahldatum.
+        - Format ZWINGEND: yyyy-MM-dd (z. B. 2026-03-15).
+        - Wandle deutsche Formate wie "15.03.2026", "15. März 2026", "15/3/26" \
+          IMMER in yyyy-MM-dd um.
+        - Lieber null als ein erratenes Datum, aber wenn irgendwo eindeutig ein \
+          Rechnungsdatum steht: zurückgeben.
         """
 
         let schema: [String: Any] = [
@@ -159,20 +224,14 @@ struct OpenAIService {
     }
 
     /// Ask the model for the next-best upsell given a customer summary.
-    func suggestUpsell(for summary: String) async throws -> (headline: String, reason: String, amount: Double)? {
-        let system = """
-        Du bist Vertriebs-Coach für eine kleine Webdesign- und Marketing-Agentur. \
-        Du bekommst die Daten eines bestehenden Kunden. Schlag den NÄCHSTEN sinnvollen \
-        Upsell vor: konkret, auf Deutsch.
-
-        Typische Upsells (Anhaltspunkte):
-        - Website-Pflege/Wartungspaket (50–150 €/Monat)
-        - Conversion-Optimierung (300–900 € einmalig)
-        - SEO-Erweiterung (200–500 €/Monat)
-        - Google Ads (150–400 € Leistung + Budget vorab)
-        - Hosting/Domain-Bundle (15–40 €/Monat)
-        - Performance-Audit (250–600 €)
-        """
+    /// `profile` beschreibt das Business hinter dem aktiven Workspace —
+    /// wenn leer, bleibt das alte "Webdesign-Agentur"-Prompt aktiv, damit
+    /// bestehende Workspaces ohne KI-Profil identisch laufen.
+    func suggestUpsell(
+        for summary: String,
+        profile: WorkspaceAIProfile = WorkspaceAIProfile()
+    ) async throws -> (headline: String, reason: String, amount: Double)? {
+        let system = upsellSystemPrompt(profile: profile)
 
         let schema: [String: Any] = [
             "type": "object",
@@ -195,6 +254,260 @@ struct OpenAIService {
             ]
         )
         return (r.headline, r.reason, r.amount)
+    }
+
+    /// Baut den System-Prompt für `suggestUpsell` zusammen. Mit gepflegtem
+    /// KI-Profil wird Branche/Beschreibung direkt durchgereicht. Ohne
+    /// Profil schauen wir auf den Workspace-Namen: nur wenn er klar nach
+    /// Webdesign/Marketing klingt, bleibt der alte Webdesign-Prompt aktiv
+    /// — sonst fragt das Modell konservativ aus den Kundendaten allein.
+    private func upsellSystemPrompt(profile: WorkspaceAIProfile) -> String {
+        guard profile.hasContent else {
+            let name = profile.workspaceName.lowercased()
+            let looksLikeWebdesign = name.contains("webdesign")
+                || name.contains("marketing")
+                || name.contains("agency")
+                || name.contains("agentur")
+                || name.contains("design")
+            if looksLikeWebdesign {
+                return """
+                Du bist Vertriebs-Coach für eine kleine Webdesign- und Marketing-Agentur. \
+                Du bekommst die Daten eines bestehenden Kunden. Schlag den NÄCHSTEN sinnvollen \
+                Upsell vor: konkret, auf Deutsch.
+
+                Typische Upsells (Anhaltspunkte):
+                - Website-Pflege/Wartungspaket (50–150 €/Monat)
+                - Conversion-Optimierung (300–900 € einmalig)
+                - SEO-Erweiterung (200–500 €/Monat)
+                - Google Ads (150–400 € Leistung + Budget vorab)
+                - Hosting/Domain-Bundle (15–40 €/Monat)
+                - Performance-Audit (250–600 €)
+                """
+            }
+            return """
+            Du bist Vertriebs-Coach für das Unternehmen "\(profile.workspaceName)". \
+            WICHTIG: Du hast KEINE genauere Beschreibung der Branche. Leite die \
+            wahrscheinliche Branche aus den unten gelisteten Leistungen/Rechnungs-Posten \
+            des Kunden ab. Erfinde NIEMALS Webdesign-Upsells (SEO, Google Ads, Wartung, \
+            Website-Pflege), nur weil sie generisch klingen.
+
+            Schlag den NÄCHSTEN sinnvollen Upsell auf Deutsch vor, der streng zu den \
+            tatsächlich gebuchten Leistungen passt. Sinnvolle Hebel sind je nach \
+            Geschäftsmodell z. B.:
+            - höhere Lizenz-/Subscription-Tiers
+            - Add-on-Module oder Zusatz-User
+            - Service-/Support-/Wartungs-Verträge passend zum Produkt
+            - Schulungen, Onboarding, Begleitung
+            - Mengen-/Volumen-Erweiterungen, weitere Standorte
+            - Folge-Mandate / wiederkehrende Beratung
+
+            Antworte konkret und im realistischen Preisrahmen für die Branche.
+            """
+        }
+
+        let kind = profile.businessKind.trimmingCharacters(in: .whitespacesAndNewlines)
+        let desc = profile.businessProfile.trimmingCharacters(in: .whitespacesAndNewlines)
+        let playbook = profile.upsellPlaybook.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        var lines: [String] = []
+        lines.append("Du bist Vertriebs-Coach für ein konkret beschriebenes Business. " +
+                     "Du bekommst die Daten eines bestehenden Kunden. Schlag den NÄCHSTEN sinnvollen " +
+                     "Upsell vor: konkret, auf Deutsch, exakt passend zur Branche.")
+        lines.append("")
+        if !kind.isEmpty {
+            lines.append("Branche / Geschäftsmodell: \(kind)")
+        }
+        if !desc.isEmpty {
+            lines.append("Was das Business macht / verkauft:\n\(desc)")
+        }
+        lines.append("")
+        if !playbook.isEmpty {
+            lines.append("Typische Upsells in diesem Geschäftsmodell (Anhaltspunkte):\n\(playbook)")
+        } else {
+            lines.append("Leite typische Upsells aus der oben beschriebenen Branche ab — " +
+                         "z. B. Service-Verträge, Support-/Pflege-Pakete, höhere Lizenztiers, " +
+                         "Schulungen, Add-on-Module, Mengen-Erweiterungen, Begleitberatung.")
+        }
+        lines.append("")
+        lines.append("Wichtig: Der Vorschlag muss zur Branche passen. Wenn es kein Webdesign-Business " +
+                     "ist, erfinde KEINE SEO-/Google-Ads-Upsells nur weil sie generisch sind.")
+        return lines.joined(separator: "\n")
+    }
+
+    /// Summarize a customer/lead email into 2-4 short German bullet points.
+    func summarizeEmail(subject: String, body: String) async throws -> String {
+        let system = """
+        Du fasst E-Mails einer kleinen Webdesign-/Marketing-Agentur in 2-4 kurzen \
+        Bullet-Points auf Deutsch zusammen. Konzentriere dich auf: Anliegen/Thema, \
+        konkrete Vereinbarungen, offene Fragen, nächste Schritte.
+
+        Regeln:
+        - Antworte ausschließlich mit Bullet-Points (Format: "• …").
+        - Keine Anrede, keine Einleitung, kein Fließtext drumherum.
+        - Maximal 4 Punkte, möglichst knapp.
+        - Wenn die E-Mail leer oder sinnlos kurz ist, gib einen einzigen Punkt zurück: \
+          "• Keine relevanten Inhalte erkennbar."
+        """
+
+        let schema: [String: Any] = [
+            "type": "object",
+            "additionalProperties": false,
+            "properties": [
+                "summary": ["type": "string"]
+            ],
+            "required": ["summary"]
+        ]
+
+        let trimmedBody = String(body.prefix(8000))
+        let userText: String = {
+            let subjectLine = subject.isEmpty ? "" : "Betreff: \(subject)\n\n"
+            return "\(subjectLine)E-Mail-Inhalt:\n\(trimmedBody)"
+        }()
+
+        struct R: Codable { let summary: String }
+        let r: R = try await callJSON(
+            schemaName: "email_summary",
+            schema: schema,
+            messages: [
+                ["role": "system", "content": system],
+                ["role": "user", "content": userText]
+            ]
+        )
+        return r.summary
+    }
+
+    /// Decide whether an email confirms a concrete appointment and, if so,
+    /// pull out title/date/time/location. The model is instructed to be
+    /// conservative: `accepted=true` only for clearly mutual confirmations.
+    func extractAppointment(subject: String, body: String) async throws -> ExtractedAppointment {
+        let system = """
+        Du bist ein präziser Termin-Extraktor für E-Mails einer kleinen \
+        Webdesign-/Marketing-Agentur. Lies die E-Mail und entscheide, ob darin \
+        ein konkreter Termin VERBINDLICH bestätigt oder akzeptiert wurde.
+
+        Regeln für accepted=true:
+        - Es gibt ein konkretes Datum UND eine konkrete Uhrzeit (oder klar ganztägig).
+        - Der Termin ist erkennbar bestätigt — z. B. "passt", "bestätigt", \
+          "freue mich auf Donnerstag 14 Uhr", "wir sehen uns am 20.06. um 10:00", \
+          "der vorgeschlagene Termin am … passt mir".
+        - Auch wenn jemand einen Vorschlag eindeutig annimmt: true.
+
+        Regeln für accepted=false:
+        - Reine Terminvorschläge ohne Bestätigung ("Wie wäre Donnerstag?").
+        - Vages ("vielleicht nächste Woche", "melde mich noch").
+        - Absagen / Stornierungen / Verschiebungen ohne neuen festen Termin.
+        - Kein konkretes Datum ODER keine konkrete Uhrzeit (außer bei expliziter \
+          Ganztags-Vereinbarung).
+
+        Feld-Format:
+        - title: Kurzer aussagekräftiger Titel (z. B. "Kickoff Website", \
+          "Beratung SEO"). Bei accepted=false: null.
+        - startsAt: ISO 8601 mit Zeitzone wenn bekannt (Beispiel \
+          "2026-06-20T14:00:00+02:00"). Wenn keine Zeitzone genannt: \
+          "2026-06-20T14:00:00" (interpretiert als Europa/Berlin). Bei \
+          accepted=false oder ohne klaren Zeitpunkt: null.
+        - endsAt: gleiches Format, optional. Wenn keine Endzeit/Dauer \
+          erkennbar: null.
+        - location: physische Adresse, Raum, Video-Link (Zoom/Meet/Teams) \
+          oder Telefon. Wenn unbekannt: null.
+        - allDay: true nur bei klar ganztägigem Termin, sonst false.
+
+        Wenn mehrere Termine im Text stehen, wähle den EINEN, der am \
+        eindeutigsten verbindlich vereinbart ist.
+        """
+
+        let schema: [String: Any] = [
+            "type": "object",
+            "additionalProperties": false,
+            "properties": [
+                "accepted": ["type": "boolean"],
+                "title":    ["type": ["string", "null"]],
+                "startsAt": ["type": ["string", "null"]],
+                "endsAt":   ["type": ["string", "null"]],
+                "location": ["type": ["string", "null"]],
+                "allDay":   ["type": ["boolean", "null"]]
+            ],
+            "required": ["accepted", "title", "startsAt", "endsAt", "location", "allDay"]
+        ]
+
+        let trimmedBody = String(body.prefix(8000))
+        let userText: String = {
+            let subjectLine = subject.isEmpty ? "" : "Betreff: \(subject)\n\n"
+            return "\(subjectLine)E-Mail-Inhalt:\n\(trimmedBody)"
+        }()
+
+        return try await callJSON(
+            schemaName: "appointment_extract",
+            schema: schema,
+            messages: [
+                ["role": "system", "content": system],
+                ["role": "user", "content": userText]
+            ]
+        )
+    }
+
+    /// Draft a friendly German reply to a received customer/lead email.
+    /// Returns subject + body; nothing is persisted — the caller decides what to do.
+    func draftReply(
+        receivedSubject: String,
+        receivedBody: String,
+        leadName: String,
+        leadCompany: String,
+        offerDescription: String?
+    ) async throws -> DraftedReply {
+        let system = """
+        Du verfasst freundliche, professionelle Antwort-E-Mails für eine kleine \
+        Webdesign-/Marketing-Agentur. Antworte ausschließlich auf Deutsch.
+
+        Regeln:
+        - Beginne mit einer passenden Anrede ("Hallo {Vorname}" wenn ein Vorname \
+          erkennbar ist, sonst "Hallo {Name}", sonst "Hallo zusammen").
+        - Knapper, warmer Ton — keine Floskeln, keine Marketing-Phrasen.
+        - Beziehe dich klar auf die Inhalte der empfangenen E-Mail.
+        - Beantworte gestellte Fragen konkret. Falls offen, kündige Klärung an.
+        - Maximal 4–6 Sätze plus Schlussformel.
+        - Schluss mit "Beste Grüße" auf eigener Zeile (kein Name dahinter, \
+          das ergänzt der Nutzer beim Versenden).
+        - subject: "Re: {empfangener Betreff}" wenn vorhanden, sonst ein \
+          eigener, treffender Betreff.
+        """
+
+        let schema: [String: Any] = [
+            "type": "object",
+            "additionalProperties": false,
+            "properties": [
+                "subject": ["type": "string"],
+                "body":    ["type": "string"]
+            ],
+            "required": ["subject", "body"]
+        ]
+
+        let trimmedBody = String(receivedBody.prefix(8000))
+        let leadLine = leadCompany.isEmpty
+            ? "Lead: \(leadName)"
+            : "Lead: \(leadName) (\(leadCompany))"
+        let offerLine: String = {
+            guard let o = offerDescription?.trimmingCharacters(in: .whitespaces),
+                  !o.isEmpty else { return "" }
+            return "Aktuelles Angebot: \(o)\n"
+        }()
+        let subjectLine = receivedSubject.isEmpty
+            ? ""
+            : "Empfangener Betreff: \(receivedSubject)\n\n"
+        let userText = """
+        \(leadLine)
+        \(offerLine)\(subjectLine)Empfangener E-Mail-Inhalt:
+        \(trimmedBody)
+        """
+
+        return try await callJSON(
+            schemaName: "reply_draft",
+            schema: schema,
+            messages: [
+                ["role": "system", "content": system],
+                ["role": "user", "content": userText]
+            ]
+        )
     }
 
     /// Quick health check used by the Settings view to validate a key.

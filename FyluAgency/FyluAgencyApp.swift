@@ -10,6 +10,7 @@ struct FyluAgencyApp: App {
             Workspace.self,
             Customer.self,
             Lead.self,
+            LeadEmail.self,
             Issue.self,
             Cost.self,
             Invoice.self,
@@ -17,7 +18,10 @@ struct FyluAgencyApp: App {
             UploadedInvoice.self,
             CashIncome.self,
             DeductibleExpense.self,
-            Todo.self
+            Todo.self,
+            Quote.self,
+            QuoteItem.self,
+            Appointment.self
         ])
         let config = ModelConfiguration(
             "FyluAgency",

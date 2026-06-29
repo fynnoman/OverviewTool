@@ -46,6 +46,9 @@ final class Lead {
     @Relationship(deleteRule: .cascade, inverse: \Issue.lead)
     var issues: [Issue] = []
 
+    @Relationship(deleteRule: .cascade, inverse: \LeadEmail.lead)
+    var emails: [LeadEmail] = []
+
     var status: LeadStatus {
         get { LeadStatus(rawValue: statusRaw) ?? .new }
         set { statusRaw = newValue.rawValue; updatedAt = Date(); lastContactAt = Date() }

@@ -57,21 +57,64 @@ struct DashboardView: View {
     let workspace: Workspace
     @Environment(\.modelContext) private var modelContext
     @State private var range: DashboardRange = .month
+    /// Months offset from "now" for the .month range. 0 = current month,
+    /// -1 = last month, etc. Reset whenever `range` leaves `.month`.
+    @State private var monthOffset: Int = 0
     @State private var upsells: [(customer: Customer, headline: String, reason: String, amount: Double)] = []
     @State private var isLoadingUpsells = false
     @State private var upsellError: String?
     @State private var upsellSource: String?
+    @State private var showGrossDetail = false
+    /// Inline-Eingabe für den AI-Profil-Banner ganz oben. Wird beim Laden
+    /// und beim Workspace-Wechsel aus `workspace.businessProfile` befüllt.
+    @State private var profileDraft: String = ""
+    @State private var isSavingProfile: Bool = false
 
     private var invoices: [Invoice] {
         workspace.customers.flatMap(\.invoices)
     }
 
-    private var filteredInvoices: [Invoice] {
-        let start = range.startDate()
-        return invoices.filter { inv in
-            guard let start else { return true }
-            return inv.date >= start
+    /// Reference date inside the month the user is currently looking at.
+    /// Only meaningful when `range == .month`.
+    private var monthAnchor: Date {
+        Calendar.current.date(byAdding: .month, value: monthOffset, to: Date()) ?? Date()
+    }
+
+    private var monthLabel: String {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "de_DE")
+        f.dateFormat = "LLLL yyyy"
+        return f.string(from: monthAnchor).capitalized
+    }
+
+    /// Lower bound for the active range. For `.month` we override the
+    /// default (start of current month) with the start of `monthAnchor`'s
+    /// month so the user can scroll back to e.g. January.
+    private var rangeStart: Date? {
+        if range == .month {
+            let cal = Calendar.current
+            return cal.date(from: cal.dateComponents([.year, .month], from: monthAnchor))
         }
+        return range.startDate()
+    }
+
+    /// Upper bound — only set when looking at a bounded historical period.
+    /// `nil` means "no upper bound" (everything up to now is included).
+    private var rangeEnd: Date? {
+        if range == .month, let start = rangeStart {
+            return Calendar.current.date(byAdding: .month, value: 1, to: start)
+        }
+        return nil
+    }
+
+    private func inRange(_ d: Date) -> Bool {
+        if let start = rangeStart, d < start { return false }
+        if let end = rangeEnd, d >= end { return false }
+        return true
+    }
+
+    private var filteredInvoices: [Invoice] {
+        invoices.filter { inRange($0.date) }
     }
 
     private var grossTotal: Double { filteredInvoices.reduce(0) { $0 + $1.total } }
@@ -85,12 +128,7 @@ struct DashboardView: View {
     }
 
     private var filteredCustomerCosts: [Cost] {
-        let start = range.startDate()
-        return workspace.customers.flatMap(\.costs).filter { cost in
-            guard let start else { return true }
-            let when = cost.dueDate ?? cost.createdAt
-            return when >= start
-        }
+        workspace.customers.flatMap(\.costs).filter { inRange($0.dueDate ?? $0.createdAt) }
     }
 
     private var costsTotal: Double {
@@ -98,11 +136,9 @@ struct DashboardView: View {
     }
 
     private var cashIncomeTotal: Double {
-        let start = range.startDate()
-        return workspace.customers.flatMap(\.cashIncomes).filter { cash in
-            guard let start else { return true }
-            return cash.date >= start
-        }.reduce(0) { $0 + $1.amount }
+        workspace.customers.flatMap(\.cashIncomes)
+            .filter { inRange($0.date) }
+            .reduce(0) { $0 + $1.amount }
     }
 
     private var profitTotal: Double { grossTotal + cashIncomeTotal - costsTotal }
@@ -148,11 +184,7 @@ struct DashboardView: View {
     }
 
     private var filteredDeductibleExpenses: [DeductibleExpense] {
-        let start = range.startDate()
-        return workspace.deductibleExpenses.filter { e in
-            guard let start else { return true }
-            return e.date >= start
-        }
+        workspace.deductibleExpenses.filter { inRange($0.date) }
     }
 
     private var deductibleTotal: Double {
@@ -181,6 +213,12 @@ struct DashboardView: View {
             VStack(alignment: .leading, spacing: 16) {
                 Header(workspace: workspace, range: $range)
 
+                aiProfileBanner
+
+                if range == .month {
+                    monthNavigator
+                }
+
                 kpiRow
 
                 HStack(alignment: .top, spacing: 16) {
@@ -192,6 +230,7 @@ struct DashboardView: View {
                     .frame(maxWidth: .infinity)
 
                     VStack(alignment: .leading, spacing: 16) {
+                        followUpCard
                         openIssuesCard
                         leadsCard
                     }
@@ -201,7 +240,129 @@ struct DashboardView: View {
             .padding(20)
         }
         .task(id: workspace.id) {
+            profileDraft = workspace.businessProfile ?? ""
             await refreshUpsells()
+        }
+        .onChange(of: range) { _, newValue in
+            if newValue != .month { monthOffset = 0 }
+        }
+        .sheet(isPresented: $showGrossDetail) {
+            GrossInvoicesDetailView(
+                invoices: filteredInvoices,
+                rangeTitle: rangeDisplayTitle,
+                total: grossTotal
+            )
+        }
+    }
+
+    /// Label used in the detail sheet and elsewhere. Mirrors `range.longTitle`
+    /// but for `.month` falls back to the actual month name when the user has
+    /// scrolled away from the current month.
+    private var rangeDisplayTitle: String {
+        if range == .month && monthOffset != 0 { return monthLabel }
+        return range.longTitle
+    }
+
+    /// Prominenter Setup-Block ganz oben. Erscheint nur, wenn der aktive
+    /// Workspace noch kein KI-Profil hat — sobald `businessProfile` oder
+    /// `businessKind` gesetzt ist, blendet sich der Banner aus. Nach dem
+    /// Speichern triggern wir direkt ein refresh, damit der nächste Klick
+    /// auf "Neue Vorschläge laden" nicht mehr nötig ist.
+    @ViewBuilder
+    private var aiProfileBanner: some View {
+        let kind = (workspace.businessKind ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        let profile = (workspace.businessProfile ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        if kind.isEmpty && profile.isEmpty {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 8) {
+                    Image(systemName: "sparkles")
+                        .foregroundStyle(Color.accentColor)
+                    Text("KI braucht noch Kontext für \"\(workspace.name)\"")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                    Spacer()
+                }
+                Text("Beschreib kurz, was dieser Workspace verkauft — z. B. \"Software für Gebäudereiniger, B2B, 49–249 €/Monat\". Sonst rät die KI generisch (oft Webdesign), weil sie's nicht besser weiß.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                TextEditor(text: $profileDraft)
+                    .frame(minHeight: 70)
+                    .border(Color.gray.opacity(0.25))
+                HStack {
+                    Button {
+                        saveProfileFromBanner()
+                    } label: {
+                        Label(isSavingProfile ? "Speichere…" : "Speichern & KI neu laden",
+                              systemImage: "checkmark")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(isSavingProfile || profileDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+
+                    Text("Detailliertere Felder findest du in den Einstellungen → KI-Profil.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                }
+            }
+            .padding(14)
+            .background(Color.accentColor.opacity(0.08))
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(Color.accentColor.opacity(0.35))
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+        }
+    }
+
+    private func saveProfileFromBanner() {
+        let trimmed = profileDraft.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        isSavingProfile = true
+        workspace.businessProfile = trimmed
+        workspace.updatedAt = Date()
+        try? modelContext.save()
+        Task {
+            await refreshUpsells(force: true)
+            isSavingProfile = false
+        }
+    }
+
+    private var monthNavigator: some View {
+        HStack(spacing: 10) {
+            Button {
+                monthOffset -= 1
+            } label: {
+                Image(systemName: "chevron.left")
+            }
+            .buttonStyle(.bordered)
+            .help("Vorheriger Monat")
+
+            Text(monthLabel)
+                .font(.callout).fontWeight(.semibold)
+                .frame(minWidth: 150, alignment: .center)
+                .padding(.vertical, 4)
+                .padding(.horizontal, 10)
+                .background(Color.gray.opacity(0.06))
+                .clipShape(Capsule())
+
+            Button {
+                monthOffset += 1
+            } label: {
+                Image(systemName: "chevron.right")
+            }
+            .buttonStyle(.bordered)
+            .disabled(monthOffset >= 0)
+            .help("Nächster Monat")
+
+            if monthOffset != 0 {
+                Button("Aktueller Monat") {
+                    monthOffset = 0
+                }
+                .buttonStyle(.borderless)
+                .foregroundStyle(Color.accentColor)
+            }
+
+            Spacer()
         }
     }
 
@@ -209,6 +370,9 @@ struct DashboardView: View {
         VStack(spacing: 12) {
             HStack(spacing: 12) {
                 KpiCard(title: "Brutto (steuerpflichtig)", value: Money.format(grossTotal), accent: true)
+                    .contentShape(Rectangle())
+                    .onTapGesture { showGrossDetail = true }
+                    .help("Tippen, um die Rechnungen dieser Periode zu sehen")
                 KpiCard(
                     title: "Bar (ohne Rechnung)",
                     value: Money.format(cashIncomeTotal),
@@ -513,6 +677,146 @@ struct DashboardView: View {
         }
     }
 
+    // MARK: Follow-up reminders
+
+    /// Eintrag für die "Wieder melden"-Card. Wir mischen Leads und Kunden
+    /// in einer gemeinsamen Liste, sortiert nach "Tage seit letztem Kontakt
+    /// absteigend" — wer am längsten Funkstille hat, steht oben.
+    private struct FollowUp: Identifiable {
+        enum Kind { case lead, customer }
+        let id: UUID
+        let kind: Kind
+        let title: String
+        let subtitle: String
+        let lastContact: Date?
+        let daysSince: Int   // -1 = nie kontaktiert
+        let threshold: Int
+        var overdueBy: Int { daysSince - threshold }
+    }
+
+    /// Letzter Kontakt-Zeitpunkt für einen Lead. Wir bevorzugen das
+    /// explizite `lastContactAt`-Feld; fallen sonst auf die jüngste Mail
+    /// bzw. `updatedAt` zurück.
+    private func leadLastContact(_ lead: Lead) -> Date? {
+        if let last = lead.lastContactAt { return last }
+        let mailDates = lead.emails.compactMap { $0.sentAt ?? $0.createdAt }
+        if let newest = mailDates.max() { return newest }
+        return lead.updatedAt
+    }
+
+    private var followUps: [FollowUp] {
+        let leadThreshold = workspace.effectiveLeadReminderDays
+        let customerThreshold = workspace.effectiveCustomerReminderDays
+        var out: [FollowUp] = []
+
+        // Leads in aktiven Pipeline-Phasen — gewonnene/verlorene ignorieren
+        for lead in workspace.leads where lead.status != .won && lead.status != .lost {
+            let last = leadLastContact(lead)
+            let days: Int = last.map { Int(Date().timeIntervalSince($0) / 86_400) } ?? -1
+            // -1 (nie) zählt wie ∞ Tage Funkstille, aber nur wenn der Lead
+            // schon eine Weile existiert (mind. so lang wie die Schwelle).
+            let ageDays = Int(Date().timeIntervalSince(lead.createdAt) / 86_400)
+            if days >= leadThreshold || (days < 0 && ageDays >= leadThreshold) {
+                let normalisedDays = days < 0 ? ageDays : days
+                out.append(FollowUp(
+                    id: lead.id,
+                    kind: .lead,
+                    title: lead.name,
+                    subtitle: lead.company.isEmpty ? lead.status.title : "\(lead.company) · \(lead.status.title)",
+                    lastContact: last,
+                    daysSince: normalisedDays,
+                    threshold: leadThreshold
+                ))
+            }
+        }
+
+        // Kunden — nur Bestandskunden (mind. 1 Rechnung), Archivierte raus
+        for customer in workspace.customers where customer.archivedAt == nil {
+            guard !customer.invoices.isEmpty else { continue }
+            let last = customer.lastContactAt
+            // Wenn nie ein Kontakt notiert wurde, nutzen wir das Datum der
+            // letzten Rechnung als Proxy — sonst landen alle bestehenden
+            // Kunden sofort hier drin.
+            let lastRef = last ?? customer.invoices.sorted(by: { $0.date > $1.date }).first?.date
+            guard let lastRef else { continue }
+            let days = Int(Date().timeIntervalSince(lastRef) / 86_400)
+            if days >= customerThreshold {
+                out.append(FollowUp(
+                    id: customer.id,
+                    kind: .customer,
+                    title: customer.name,
+                    subtitle: customer.company.isEmpty ? "Kunde" : customer.company,
+                    lastContact: last,
+                    daysSince: days,
+                    threshold: customerThreshold
+                ))
+            }
+        }
+
+        return out
+            .sorted(by: { $0.overdueBy > $1.overdueBy })
+    }
+
+    private var followUpCard: some View {
+        let items = followUps
+        let visible = Array(items.prefix(6))
+        let leadDays = workspace.effectiveLeadReminderDays
+        let custDays = workspace.effectiveCustomerReminderDays
+        let subtitle = "Leads ab \(leadDays) T · Kunden ab \(custDays) T"
+
+        return Card("Wieder melden", subtitle: subtitle) {
+            if items.isEmpty {
+                Text("Alles im Takt — keine offenen Kontakte überfällig.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .padding(.vertical, 8)
+            } else {
+                VStack(spacing: 0) {
+                    ForEach(visible) { item in
+                        HStack(alignment: .top, spacing: 10) {
+                            Image(systemName: item.kind == .lead ? "sparkles" : "person.fill")
+                                .foregroundStyle(item.kind == .lead ? Color.blue : Color.accentColor)
+                                .frame(width: 18)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(item.title)
+                                    .font(.system(size: 13, weight: .medium))
+                                    .lineLimit(1)
+                                Text(item.subtitle)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(1)
+                            }
+                            Spacer()
+                            VStack(alignment: .trailing, spacing: 2) {
+                                Text("\(item.daysSince) T")
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundStyle(item.overdueBy > item.threshold ? Color.red : Color.orange)
+                                if let last = item.lastContact {
+                                    Text(DateFmt.short(last))
+                                        .font(.caption2)
+                                        .foregroundStyle(.tertiary)
+                                } else {
+                                    Text("nie")
+                                        .font(.caption2)
+                                        .foregroundStyle(.tertiary)
+                                }
+                            }
+                        }
+                        .padding(.vertical, 6)
+                        Divider()
+                    }
+                    if items.count > visible.count {
+                        Text("+\(items.count - visible.count) weitere")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.top, 6)
+                    }
+                }
+            }
+        }
+    }
+
     private func pillColor(for status: LeadStatus) -> Color {
         switch status {
         case .new, .contacted: .blue
@@ -527,10 +831,11 @@ struct DashboardView: View {
     private struct ChartPoint { let label: String; let total: Double; let sortKey: Int }
 
     private func buildChartData() -> [ChartPoint] {
-        guard !invoices.isEmpty else { return [] }
+        let source = filteredInvoices
+        guard !source.isEmpty else { return [] }
         var buckets: [String: (label: String, total: Double, sortKey: Int)] = [:]
         let cal = Calendar.current
-        for inv in invoices {
+        for inv in source {
             let d = inv.date
             let key: String
             let label: String
@@ -608,10 +913,11 @@ struct DashboardView: View {
         var results: [(customer: Customer, headline: String, reason: String, amount: Double)] = []
         var firstError: String?
 
+        let profile = WorkspaceAIProfile(workspace: workspace)
         for customer in prioritized {
             let summary = customerSummary(customer)
             do {
-                if let r = try await service.suggestUpsell(for: summary) {
+                if let r = try await service.suggestUpsell(for: summary, profile: profile) {
                     results.append((customer, r.headline, r.reason, r.amount))
                 }
             } catch {
@@ -653,29 +959,79 @@ struct DashboardView: View {
     }
 
     private func heuristicUpsells() -> [(customer: Customer, headline: String, reason: String, amount: Double)] {
+        // Branchen-Erkennung: wir gucken zuerst auf das KI-Profil. Wenn
+        // das leer ist, fallen wir auf den Workspace-Namen zurück — nur
+        // wenn DER klar nach Webdesign aussieht, bleibt die alte
+        // SEO/Ads/Wartung-Heuristik aktiv. Sonst liefern wir generische
+        // Vorschläge, damit Taskey & Co. keine Webdesign-Empfehlungen
+        // serviert bekommen.
+        let kindRaw = (workspace.businessKind ?? "").lowercased()
+        let nameRaw = workspace.name.lowercased()
+        let isWebdesign: Bool = {
+            if !kindRaw.isEmpty {
+                return kindRaw.contains("webdesign")
+                    || kindRaw.contains("marketing")
+                    || kindRaw.contains("agentur")
+                    || kindRaw.contains("seo")
+            }
+            // Kein KI-Profil → letzter Anker: heißt der Workspace selbst so?
+            return nameRaw.contains("webdesign")
+                || nameRaw.contains("marketing")
+                || nameRaw.contains("agency")
+                || nameRaw.contains("agentur")
+                || nameRaw.contains("design")
+        }()
+
         var out: [(Customer, String, String, Double)] = []
         for c in workspace.customers {
-            // Customers without invoices yet — suggest starting a service relationship
-            if c.invoices.isEmpty {
-                out.append((c, "Erstes Angebot platzieren — Website-Setup ab 800 €",
-                            "Noch keine Rechnung. Klassischer Einstieg ist ein Website-Projekt.", 800))
-                continue
-            }
+            if isWebdesign {
+                if c.invoices.isEmpty {
+                    out.append((c, "Erstes Angebot platzieren — Website-Setup ab 800 €",
+                                "Noch keine Rechnung. Klassischer Einstieg ist ein Website-Projekt.", 800))
+                    continue
+                }
 
-            let services = c.invoices.flatMap(\.items).map { $0.details.lowercased() }
-            let has = { (label: String) in services.contains { $0.contains(label) } }
-            if !has("seo") {
-                out.append((c, "SEO-Paket anbieten — 200 €/Monat",
-                            "Kunde hat noch kein SEO — klassischer Folge-Upsell.", 200))
-            } else if !has("ads") && !has("google") {
-                out.append((c, "Google Ads Setup + 200 € Betreuung/Monat",
-                            "Kunde hat SEO aber keine bezahlte Reichweite.", 200))
-            } else if !has("wartung") && !has("pflege") {
-                out.append((c, "Wartungspaket für 99 €/Monat",
-                            "Wiederkehrender Umsatz statt nur Projekt-Buchungen.", 99))
+                let services = c.invoices.flatMap(\.items).map { $0.details.lowercased() }
+                let has = { (label: String) in services.contains { $0.contains(label) } }
+                if !has("seo") {
+                    out.append((c, "SEO-Paket anbieten — 200 €/Monat",
+                                "Kunde hat noch kein SEO — klassischer Folge-Upsell.", 200))
+                } else if !has("ads") && !has("google") {
+                    out.append((c, "Google Ads Setup + 200 € Betreuung/Monat",
+                                "Kunde hat SEO aber keine bezahlte Reichweite.", 200))
+                } else if !has("wartung") && !has("pflege") {
+                    out.append((c, "Wartungspaket für 99 €/Monat",
+                                "Wiederkehrender Umsatz statt nur Projekt-Buchungen.", 99))
+                } else {
+                    out.append((c, "Performance-Audit für 350 €",
+                                "Bestandskunde — guter Aufhänger für Check-in.", 350))
+                }
             } else {
-                out.append((c, "Performance-Audit für 350 €",
-                            "Bestandskunde — guter Aufhänger für Check-in.", 350))
+                // Branchen-neutraler Fallback — solange kein OpenAI-Key da
+                // ist, zeigen wir generische "Anlass zum Reden"-Hinweise.
+                // Die richtigen Vorschläge kommen via KI sobald ein Key
+                // hinterlegt ist.
+                let daysSince: Int = {
+                    guard let last = c.invoices.sorted(by: { $0.date > $1.date }).first?.date else { return -1 }
+                    return Int(Date().timeIntervalSince(last) / 86_400)
+                }()
+                if c.invoices.isEmpty {
+                    out.append((c, "Erstgespräch / Pilot anbieten",
+                                "Noch keine Rechnung — Anlass für einen konkreten Pilot- oder Erstauftrag.",
+                                0))
+                } else if daysSince > 60 {
+                    out.append((c, "Check-in nach \(daysSince) Tagen Funkstille",
+                                "Letzte Rechnung liegt \(daysSince) Tage zurück — guter Anlass für ein Status-Gespräch.",
+                                0))
+                } else if c.monthlyRecurringCost <= 0 {
+                    out.append((c, "Wiederkehrendes Paket vorschlagen",
+                                "Bisher nur Einmal-Aufträge. Ein Service-/Support-Paket würde wiederkehrenden Umsatz bringen.",
+                                0))
+                } else {
+                    out.append((c, "Upgrade auf höheres Paket anstoßen",
+                                "Bestandskunde mit laufender Buchung — guter Hebel für ein höheres Tier oder Zusatzmodul.",
+                                0))
+                }
             }
         }
         return Array(out.sorted(by: { $0.3 > $1.3 }).prefix(5))

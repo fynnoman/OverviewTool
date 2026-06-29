@@ -23,6 +23,7 @@ struct SettingsView: View {
                     invoiceCard(workspace: workspace)
                     layoutCard(workspace: workspace)
                     apiKeyCard(workspace: workspace)
+                    aiProfileCard(workspace: workspace)
                     logoCard(workspace: workspace)
                 } else {
                     ContentUnavailableView(
@@ -258,6 +259,95 @@ struct SettingsView: View {
 
                 Text("Endpoint: /v1/responses · Structured Output via JSON-Schema")
                     .font(.caption2).foregroundStyle(.tertiary)
+            }
+        }
+    }
+
+    // MARK: KI-Profil & Erinnerungen
+
+    private func aiProfileCard(workspace: Workspace) -> some View {
+        Card(
+            "KI-Profil & Erinnerungen",
+            subtitle: "Worauf sich KI-Vorschläge stützen · Reminder-Schwellen"
+        ) {
+            VStack(alignment: .leading, spacing: 12) {
+                Text("Beschreib, was dieser Workspace tatsächlich verkauft. Die KI nimmt das als Grundlage für Upsell-Vorschläge — z. B. Web-Pflege bei einer Agentur, höhere Lizenztiers bei einer SaaS, Folge-Mandate bei Beratung.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Branche / Geschäftsmodell").font(.caption).foregroundStyle(.secondary)
+                    TextField(
+                        "z. B. Webdesign-Agentur, B2B-SaaS, IT-Beratung",
+                        text: Binding(
+                            get: { workspace.businessKind ?? "" },
+                            set: { workspace.businessKind = $0.isEmpty ? nil : $0 }
+                        )
+                    )
+                    .textFieldStyle(.roundedBorder)
+                }
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Was machst du? (für die KI)").font(.caption).foregroundStyle(.secondary)
+                    TextEditor(text: Binding(
+                        get: { workspace.businessProfile ?? "" },
+                        set: { workspace.businessProfile = $0.isEmpty ? nil : $0 }
+                    ))
+                    .frame(minHeight: 90)
+                    .border(Color.gray.opacity(0.2))
+                    Text("Z. B. \"Wir verkaufen eine SaaS für Bäckereien, 49–249 €/Monat, B2B, Hauptzielgruppe Inhaber kleiner Filialketten.\"")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Typische Upsells (optional)").font(.caption).foregroundStyle(.secondary)
+                    TextEditor(text: Binding(
+                        get: { workspace.aiUpsellPlaybook ?? "" },
+                        set: { workspace.aiUpsellPlaybook = $0.isEmpty ? nil : $0 }
+                    ))
+                    .frame(minHeight: 70)
+                    .border(Color.gray.opacity(0.2))
+                    Text("Hilft der KI, im richtigen Preisrahmen zu bleiben. Leer lassen ist okay — sie leitet es dann selbst aus der Branche ab.")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+
+                Divider().padding(.vertical, 4)
+
+                Text("Erinnerungen im Dashboard").font(.subheadline).fontWeight(.semibold)
+                Text("Ein Lead/Kunde landet im Dashboard-Block \"Wieder melden\", sobald sein letzter Kontakt länger her ist als die jeweilige Schwelle.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                HStack(spacing: 12) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Lead-Reminder nach (Tage)").font(.caption).foregroundStyle(.secondary)
+                        TextField(
+                            String(Workspace.defaultLeadReminderDays),
+                            value: Binding(
+                                get: { workspace.leadReminderDays ?? Workspace.defaultLeadReminderDays },
+                                set: { workspace.leadReminderDays = max(1, $0) }
+                            ),
+                            format: .number
+                        )
+                        .textFieldStyle(.roundedBorder)
+                    }
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Kunden-Reminder nach (Tage)").font(.caption).foregroundStyle(.secondary)
+                        TextField(
+                            String(Workspace.defaultCustomerReminderDays),
+                            value: Binding(
+                                get: { workspace.customerReminderDays ?? Workspace.defaultCustomerReminderDays },
+                                set: { workspace.customerReminderDays = max(1, $0) }
+                            ),
+                            format: .number
+                        )
+                        .textFieldStyle(.roundedBorder)
+                    }
+                }
+
+                SaveButton { try? modelContext.save() }
             }
         }
     }

@@ -15,6 +15,11 @@ final class Customer {
     var createdAt: Date
     var updatedAt: Date
 
+    /// Manuell markierter Zeitpunkt des letzten Kontakts (Mail, Call, Treffen).
+    /// Optional — existierende Kunden behalten nil, bis du das erste Mal
+    /// "Kontakt notiert" drückst.
+    var lastContactAt: Date?
+
     var workspace: Workspace?
 
     @Relationship(deleteRule: .cascade, inverse: \Issue.customer)
@@ -25,6 +30,9 @@ final class Customer {
 
     @Relationship(deleteRule: .cascade, inverse: \Invoice.customer)
     var invoices: [Invoice] = []
+
+    @Relationship(deleteRule: .cascade, inverse: \Quote.customer)
+    var quotes: [Quote] = []
 
     @Relationship(deleteRule: .cascade, inverse: \UploadedInvoice.customer)
     var uploadedInvoices: [UploadedInvoice] = []

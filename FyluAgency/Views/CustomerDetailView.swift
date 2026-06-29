@@ -29,6 +29,7 @@ struct CustomerDetailView: View {
                     .frame(maxWidth: .infinity)
 
                     VStack(spacing: 16) {
+                        contactCard
                         stammdatenCard
                         notesCard
                     }
@@ -389,12 +390,13 @@ struct CustomerDetailView: View {
                     extractedTotal = parsed.total
                     extractedNet = parsed.net
                     extractedVat = parsed.vat
-                    if let s = parsed.date {
-                        let f = DateFormatter()
-                        f.dateFormat = "yyyy-MM-dd"
-                        extractedDate = f.date(from: s)
-                    }
+                    extractedDate = Self.parseInvoiceDate(parsed.date)
                 }
+            }
+            // Last-ditch fallback: scan the OCR text for a German-style date
+            // ourselves so the invoice doesn't silently end up on "today".
+            if extractedDate == nil {
+                extractedDate = Self.scanInvoiceDate(inOCRText: text)
             }
 
             let parseStatus: UploadedInvoice.ParseStatus = extractedTotal != nil ? .parsed : .manual
@@ -597,6 +599,56 @@ struct CustomerDetailView: View {
         newCashDate = Date()
     }
 
+    /// Parse a date string returned by the AI. Tolerates ISO and the common
+    /// German variants the model sometimes emits even when asked for ISO.
+    /// Returns nil if `raw` is nil/empty or no format matches.
+    private static func parseInvoiceDate(_ raw: String?) -> Date? {
+        guard let raw, !raw.isEmpty else { return nil }
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        let candidates = [
+            "yyyy-MM-dd",
+            "yyyy/MM/dd",
+            "dd.MM.yyyy",
+            "d.M.yyyy",
+            "dd/MM/yyyy",
+            "d/M/yyyy",
+            "dd-MM-yyyy",
+            "dd.MM.yy",
+            "d.M.yy"
+        ]
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "de_DE_POSIX")
+        f.timeZone = TimeZone(identifier: "Europe/Berlin")
+        for fmt in candidates {
+            f.dateFormat = fmt
+            if let d = f.date(from: trimmed) { return d }
+        }
+        return nil
+    }
+
+    /// Best-effort scan over raw OCR text for an invoice date. Picks the
+    /// first plausible German-style date (dd.MM.yyyy or dd.MM.yy) — invoice
+    /// templates usually print the Rechnungsdatum near the top.
+    private static func scanInvoiceDate(inOCRText text: String) -> Date? {
+        // Match d/dd.M/MM.yy/yyyy with dots or slashes.
+        let pattern = #"\b(\d{1,2})[./](\d{1,2})[./](\d{2,4})\b"#
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return nil }
+        let ns = text as NSString
+        let matches = regex.matches(in: text, range: NSRange(location: 0, length: ns.length))
+        let cal = Calendar(identifier: .gregorian)
+        for m in matches where m.numberOfRanges == 4 {
+            let day = Int(ns.substring(with: m.range(at: 1))) ?? 0
+            let month = Int(ns.substring(with: m.range(at: 2))) ?? 0
+            var year = Int(ns.substring(with: m.range(at: 3))) ?? 0
+            if year < 100 { year += 2000 }
+            guard (1...31).contains(day), (1...12).contains(month), (2000...2100).contains(year) else { continue }
+            var c = DateComponents()
+            c.day = day; c.month = month; c.year = year
+            if let d = cal.date(from: c) { return d }
+        }
+        return nil
+    }
+
     private func saveUploadedFile(data: Data, originalName: String, customer: Customer) throws -> URL {
         let appSupport = try FileManager.default.url(
             for: .applicationSupportDirectory,
@@ -613,6 +665,77 @@ struct CustomerDetailView: View {
         let url = dir.appendingPathComponent("\(Int(Date().timeIntervalSince1970))-\(safe)")
         try data.write(to: url)
         return url
+    }
+
+    // MARK: Kontakt
+
+    /// Schwelle, ab der die Karte als "wieder melden" markiert. Holt sich
+    /// den Wert aus dem Workspace, fällt sonst auf den App-Default zurück.
+    private var customerReminderDays: Int {
+        workspace?.effectiveCustomerReminderDays ?? Workspace.defaultCustomerReminderDays
+    }
+
+    private var daysSinceLastContact: Int? {
+        guard let last = customer.lastContactAt else { return nil }
+        return Int(Date().timeIntervalSince(last) / 86_400)
+    }
+
+    private var contactCard: some View {
+        Card("Kontakt", subtitle: "Letzter direkter Kontakt") {
+            VStack(alignment: .leading, spacing: 10) {
+                if let last = customer.lastContactAt {
+                    let days = daysSinceLastContact ?? 0
+                    let overdue = days >= customerReminderDays
+                    HStack(spacing: 6) {
+                        Image(systemName: overdue ? "exclamationmark.circle.fill" : "checkmark.circle.fill")
+                            .foregroundStyle(overdue ? Color.orange : Color.green)
+                        Text("Vor \(days) Tag\(days == 1 ? "" : "en") — \(DateFmt.short(last))")
+                            .font(.callout)
+                    }
+                    if overdue {
+                        Text("Schwelle: \(customerReminderDays) Tage — Kunde steht im Dashboard unter \"Wieder melden\".")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                } else {
+                    HStack(spacing: 6) {
+                        Image(systemName: "circle.dashed")
+                            .foregroundStyle(.secondary)
+                        Text("Noch kein Kontakt notiert.")
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                HStack {
+                    Button {
+                        customer.lastContactAt = Date()
+                        customer.updatedAt = Date()
+                        try? modelContext.save()
+                    } label: {
+                        Label("Kontakt notiert", systemImage: "checkmark.message")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.small)
+
+                    if customer.lastContactAt != nil {
+                        Button(role: .destructive) {
+                            customer.lastContactAt = nil
+                            customer.updatedAt = Date()
+                            try? modelContext.save()
+                        } label: {
+                            Label("Zurücksetzen", systemImage: "arrow.uturn.backward")
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.small)
+                    }
+                }
+
+                Text("Klick den Knopf nach jeder Mail/Anruf — das Dashboard erinnert dich, wenn's zu lange still wird.")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+        }
     }
 
     // MARK: Stammdaten

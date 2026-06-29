@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import AppKit
 
 struct LeadsListView: View {
     let workspace: Workspace
@@ -81,7 +82,7 @@ struct LeadsListView: View {
 
                 Divider()
 
-                ScrollView(.horizontal, showsIndicators: false) {
+                ScrollView([.horizontal, .vertical], showsIndicators: false) {
                     HStack(alignment: .top, spacing: 12) {
                         ForEach(LeadStatus.pipelineOrder) { status in
                             KanbanColumn(
@@ -300,6 +301,9 @@ struct LeadDetailView: View {
     @State private var newWishTitle = ""
     @State private var newWishPrice = ""
     @State private var newWishDesc = ""
+    @State private var showNewEmail = false
+    @State private var summarizingEmailIDs: Set<UUID> = []
+    @State private var draftReplyEmail: LeadEmail?
 
     var body: some View {
         ScrollView {
@@ -312,6 +316,7 @@ struct LeadDetailView: View {
                 wishesCard
                 detailsCard
                 notesCard
+                emailsCard
                 actionsCard
             }
             .padding(20)
@@ -325,6 +330,23 @@ struct LeadDetailView: View {
                 modelContext.delete(lead)
                 try? modelContext.save()
                 dismiss()
+            }
+        }
+        .sheet(isPresented: $showNewEmail) {
+            NewLeadEmailSheet(lead: lead) { newEmail in
+                if newEmail.direction == .received {
+                    // For received emails the user gets an AI reply draft to copy,
+                    // and the source email is discarded afterwards. No need to
+                    // pay for a summary call we'll throw away.
+                    draftReplyEmail = newEmail
+                } else {
+                    summarize(email: newEmail)
+                }
+            }
+        }
+        .sheet(item: $draftReplyEmail) { sourceEmail in
+            ReplyDraftSheet(sourceEmail: sourceEmail, lead: lead) {
+                draftReplyEmail = nil
             }
         }
     }
@@ -443,6 +465,120 @@ struct LeadDetailView: View {
         }
     }
 
+    private var sortedEmails: [LeadEmail] {
+        lead.emails.sorted { a, b in
+            (a.sentAt ?? a.createdAt) > (b.sentAt ?? b.createdAt)
+        }
+    }
+
+    private var emailsCard: some View {
+        Card(
+            "E-Mails",
+            subtitle: "\(lead.emails.count) hinterlegt · KI-Zusammenfassung"
+        ) {
+            VStack(alignment: .leading, spacing: 10) {
+                if lead.emails.isEmpty {
+                    Text("Noch keine E-Mails. Füge eine gesendete oder empfangene E-Mail hinzu — die KI fasst dir die wichtigsten Punkte zusammen.")
+                        .font(.callout).foregroundStyle(.secondary)
+                } else {
+                    ForEach(sortedEmails) { email in
+                        LeadEmailRow(
+                            email: email,
+                            isSummarizing: summarizingEmailIDs.contains(email.id),
+                            onRegenerate: { summarize(email: email) },
+                            onDelete: { delete(email: email) }
+                        )
+                    }
+                }
+
+                HStack {
+                    Spacer()
+                    Button {
+                        showNewEmail = true
+                    } label: {
+                        Label("E-Mail hinzufügen", systemImage: "envelope.badge")
+                    }
+                }
+                .padding(.top, 4)
+            }
+        }
+    }
+
+    private func summarize(email: LeadEmail) {
+        guard let workspace = lead.workspace else { return }
+        guard let service = OpenAIService(workspace: workspace) else { return }
+        let id = email.id
+        let subject = email.subject
+        let body = email.body
+        summarizingEmailIDs.insert(id)
+        Task { @MainActor in
+            defer { summarizingEmailIDs.remove(id) }
+            do {
+                let summary = try await service.summarizeEmail(subject: subject, body: body)
+                email.summary = summary
+                email.summaryUpdatedAt = Date()
+                try? modelContext.save()
+            } catch {
+                // Leave previous summary as-is; user can retry.
+            }
+            await detectAppointment(in: email, service: service, workspace: workspace)
+        }
+    }
+
+    /// Side-channel: ask the model whether this email confirms a concrete
+    /// appointment and, if so, create an `Appointment` linked to the lead.
+    /// Idempotent via `sourceEmailID` so re-summarizing never duplicates.
+    @MainActor
+    private func detectAppointment(in email: LeadEmail, service: OpenAIService, workspace: Workspace) async {
+        let subject = email.subject
+        let body = email.body
+        let emailID = email.id
+        do {
+            let extracted = try await service.extractAppointment(subject: subject, body: body)
+            guard extracted.accepted,
+                  let isoStart = extracted.startsAt,
+                  let startDate = AppointmentDateParser.parse(isoStart)
+            else { return }
+
+            let existingDescriptor = FetchDescriptor<Appointment>(
+                predicate: #Predicate<Appointment> { $0.sourceEmailID == emailID }
+            )
+            if let already = (try? modelContext.fetch(existingDescriptor))?.first {
+                _ = already   // respect user edits — never overwrite
+                return
+            }
+
+            let endDate: Date? = extracted.endsAt.flatMap { AppointmentDateParser.parse($0) }
+            let resolvedTitle: String = {
+                let t = extracted.title?.trimmingCharacters(in: .whitespaces) ?? ""
+                if !t.isEmpty { return t }
+                return "Termin mit \(lead.name)"
+            }()
+
+            let appt = Appointment(
+                title: resolvedTitle,
+                notes: "",
+                startsAt: startDate,
+                endsAt: endDate,
+                location: (extracted.location ?? "").trimmingCharacters(in: .whitespaces),
+                isAllDay: extracted.allDay ?? false,
+                source: .email,
+                sourceEmailID: emailID
+            )
+            appt.workspace = workspace
+            appt.lead = lead
+            modelContext.insert(appt)
+            try? modelContext.save()
+        } catch {
+            // Silent — appointment detection is best-effort.
+        }
+    }
+
+    private func delete(email: LeadEmail) {
+        modelContext.delete(email)
+        try? modelContext.save()
+    }
+
     private var actionsCard: some View {
         Card("Aktionen") {
             HStack {
@@ -491,6 +627,348 @@ struct LeadDetailView: View {
 
         lead.status = .won
         try? modelContext.save()
+        SoundPlayer.kaching()
         dismiss()
+    }
+}
+
+struct LeadEmailRow: View {
+    let email: LeadEmail
+    let isSummarizing: Bool
+    let onRegenerate: () -> Void
+    let onDelete: () -> Void
+
+    @State private var showOriginal = false
+
+    private var directionColor: Color {
+        email.direction == .received ? .blue : .green
+    }
+
+    private var dateLabel: String {
+        DateFmt.short(email.sentAt ?? email.createdAt)
+    }
+
+    private var displaySubject: String {
+        email.subject.isEmpty ? "(ohne Betreff)" : email.subject
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(displaySubject)
+                    .font(.system(size: 13, weight: .medium))
+                    .lineLimit(2)
+                Spacer()
+                StatusPill(text: email.direction.title, color: directionColor)
+            }
+            Text(dateLabel)
+                .font(.caption2).foregroundStyle(.secondary)
+
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 6) {
+                    Image(systemName: "sparkles")
+                        .font(.caption)
+                        .foregroundStyle(Color.accentColor)
+                    Text("KI-Zusammenfassung")
+                        .font(.caption).fontWeight(.medium)
+                    if let updated = email.summaryUpdatedAt {
+                        Text("· \(DateFmt.short(updated))")
+                            .font(.caption2).foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                }
+                if isSummarizing {
+                    HStack(spacing: 6) {
+                        ProgressView().controlSize(.small)
+                        Text("KI fasst zusammen…").font(.caption).foregroundStyle(.secondary)
+                    }
+                } else if email.summary.isEmpty {
+                    Text("Noch keine Zusammenfassung. Über „Neu zusammenfassen“ erneut versuchen — OpenAI-Key in den Einstellungen prüfen.")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .italic()
+                } else {
+                    Text(email.summary)
+                        .font(.callout)
+                        .textSelection(.enabled)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .padding(8)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.accentColor.opacity(0.06))
+            .overlay(
+                RoundedRectangle(cornerRadius: 6)
+                    .stroke(Color.accentColor.opacity(0.18))
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 6))
+
+            DisclosureGroup(isExpanded: $showOriginal) {
+                Text(email.body)
+                    .font(.callout)
+                    .textSelection(.enabled)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, 4)
+            } label: {
+                Text(showOriginal ? "Original ausblenden" : "Original anzeigen")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+
+            HStack(spacing: 8) {
+                Button {
+                    onRegenerate()
+                } label: {
+                    Label("Neu zusammenfassen", systemImage: "arrow.clockwise")
+                }
+                .disabled(isSummarizing)
+
+                Button(role: .destructive) {
+                    onDelete()
+                } label: {
+                    Label("Entfernen", systemImage: "trash")
+                }
+            }
+            .controlSize(.small)
+            .padding(.top, 2)
+        }
+        .padding(10)
+        .background(Color.white.opacity(0.6))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(Color.gray.opacity(0.15))
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+    }
+}
+
+struct NewLeadEmailSheet: View {
+    let lead: Lead
+    let onCreated: (LeadEmail) -> Void
+
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var subject = ""
+    @State private var bodyText = ""
+    @State private var direction: LeadEmailDirection = .sent
+    @State private var sentAt: Date = Date()
+    @State private var hasDate: Bool = true
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Text("E-Mail hinzufügen").font(.headline)
+                Spacer()
+                Button { dismiss() } label: { Image(systemName: "xmark") }.buttonStyle(.plain)
+            }
+
+            Form {
+                Section {
+                    Picker("Richtung", selection: $direction) {
+                        ForEach(LeadEmailDirection.allCases) { d in
+                            Text(d.title).tag(d)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+
+                    TextField("Betreff (optional)", text: $subject)
+
+                    Toggle("Datum angeben", isOn: $hasDate)
+                    if hasDate {
+                        DatePicker("Datum", selection: $sentAt, displayedComponents: [.date, .hourAndMinute])
+                    }
+                }
+                Section("E-Mail-Inhalt") {
+                    TextEditor(text: $bodyText).frame(minHeight: 200)
+                }
+            }
+            .formStyle(.grouped)
+
+            HStack(spacing: 6) {
+                Image(systemName: "sparkles").foregroundStyle(Color.accentColor)
+                if direction == .received {
+                    Text("Beim Speichern erstellt die KI direkt einen Antwort-Entwurf zum Kopieren. Die empfangene E-Mail wird danach wieder entfernt.")
+                        .font(.caption).foregroundStyle(.secondary)
+                } else {
+                    Text("Beim Speichern fasst die KI automatisch die wichtigsten Punkte zusammen.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+            }
+
+            HStack {
+                Spacer()
+                Button("Abbrechen") { dismiss() }
+                Button("Hinzufügen") {
+                    let email = LeadEmail(
+                        direction: direction,
+                        subject: subject.trimmingCharacters(in: .whitespaces),
+                        body: bodyText,
+                        sentAt: hasDate ? sentAt : nil
+                    )
+                    email.lead = lead
+                    modelContext.insert(email)
+                    lead.lastContactAt = Date()
+                    try? modelContext.save()
+                    onCreated(email)
+                    dismiss()
+                }
+                .keyboardShortcut(.defaultAction)
+                .disabled(bodyText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            }
+        }
+        .padding(20)
+        .frame(width: 560, height: 640)
+    }
+}
+
+/// Generates an AI-drafted reply for a received email, lets the user copy it,
+/// and discards the source email when the sheet closes — either via the close
+/// button or after copying. Nothing about the received email is persisted.
+struct ReplyDraftSheet: View {
+    let sourceEmail: LeadEmail
+    let lead: Lead
+    let onClose: () -> Void
+
+    @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var isGenerating = true
+    @State private var draftSubject = ""
+    @State private var draftBody = ""
+    @State private var errorMessage: String?
+    @State private var didCopy = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(spacing: 8) {
+                Image(systemName: "sparkles").foregroundStyle(Color.accentColor)
+                Text("Antwort-Entwurf").font(.headline)
+                Spacer()
+                Button { close() } label: { Image(systemName: "xmark") }
+                    .buttonStyle(.plain)
+            }
+
+            Group {
+                if isGenerating {
+                    HStack(spacing: 8) {
+                        ProgressView().controlSize(.small)
+                        Text("KI verfasst eine Antwort…")
+                            .font(.callout).foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.vertical, 60)
+                } else if let err = errorMessage {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Label("Konnte keine Antwort generieren", systemImage: "exclamationmark.triangle")
+                            .foregroundStyle(.red)
+                        Text(err)
+                            .font(.callout).foregroundStyle(.secondary)
+                            .textSelection(.enabled)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Button {
+                            Task { await generate() }
+                        } label: {
+                            Label("Erneut versuchen", systemImage: "arrow.clockwise")
+                        }
+                        .padding(.top, 4)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                } else {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Betreff").font(.caption).foregroundStyle(.secondary)
+                        TextField("Betreff", text: $draftSubject)
+                            .textFieldStyle(.roundedBorder)
+
+                        Text("Antwort").font(.caption).foregroundStyle(.secondary)
+                            .padding(.top, 4)
+                        TextEditor(text: $draftBody)
+                            .font(.callout)
+                            .frame(minHeight: 280)
+                            .padding(6)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 6)
+                                    .stroke(Color.gray.opacity(0.25))
+                            )
+                    }
+                }
+            }
+
+            HStack(spacing: 6) {
+                Image(systemName: "info.circle").foregroundStyle(.secondary)
+                Text("Die empfangene E-Mail wird beim Schließen automatisch entfernt.")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+
+            HStack {
+                if didCopy {
+                    Label("In Zwischenablage kopiert", systemImage: "checkmark.circle.fill")
+                        .foregroundStyle(.green)
+                        .font(.caption)
+                }
+                Spacer()
+                Button("Verwerfen", role: .destructive) { close() }
+                Button {
+                    copyToClipboard()
+                } label: {
+                    Label("Kopieren", systemImage: "doc.on.doc")
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(isGenerating || draftBody.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                .keyboardShortcut(.defaultAction)
+            }
+        }
+        .padding(20)
+        .frame(width: 600, height: 600)
+        .task { await generate() }
+    }
+
+    private func close() {
+        modelContext.delete(sourceEmail)
+        try? modelContext.save()
+        onClose()
+        dismiss()
+    }
+
+    private func copyToClipboard() {
+        let subj = draftSubject.trimmingCharacters(in: .whitespacesAndNewlines)
+        let combined = subj.isEmpty
+            ? draftBody
+            : "Betreff: \(subj)\n\n\(draftBody)"
+        let pb = NSPasteboard.general
+        pb.clearContents()
+        pb.setString(combined, forType: .string)
+        didCopy = true
+        // Give the user a beat to see the confirmation, then drop the source email.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+            close()
+        }
+    }
+
+    @MainActor
+    private func generate() async {
+        isGenerating = true
+        errorMessage = nil
+        guard let workspace = lead.workspace,
+              let service = OpenAIService(workspace: workspace) else {
+            errorMessage = "Kein OpenAI-Key konfiguriert. Bitte in den Einstellungen hinterlegen."
+            isGenerating = false
+            return
+        }
+        do {
+            let draft = try await service.draftReply(
+                receivedSubject: sourceEmail.subject,
+                receivedBody: sourceEmail.body,
+                leadName: lead.name,
+                leadCompany: lead.company,
+                offerDescription: lead.offerDescription
+            )
+            draftSubject = draft.subject
+            draftBody = draft.body
+            isGenerating = false
+        } catch {
+            errorMessage = error.localizedDescription
+            isGenerating = false
+        }
     }
 }

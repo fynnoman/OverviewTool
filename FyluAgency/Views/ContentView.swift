@@ -15,7 +15,7 @@ struct ContentView: View {
         } detail: {
             detail
         }
-        .navigationTitle(activeWorkspace?.name ?? "Fylu Agency")
+        .navigationTitle(activeWorkspace?.name ?? "Fylu Finance")
     }
 
     private var activeWorkspace: Workspace? {
@@ -64,14 +64,16 @@ struct ContentView: View {
     private var detail: some View {
         if let workspace = activeWorkspace {
             switch appState.selection {
-            case .dashboard:  DashboardView(workspace: workspace)
-            case .customers:  CustomersListView(workspace: workspace)
-            case .leads:      LeadsListView(workspace: workspace)
-            case .invoices:   InvoicesListView(workspace: workspace)
-            case .todos:      TodoListView(workspace: workspace)
-            case .costs:      CostsListView(workspace: workspace)
-            case .taxes:      TaxView(workspace: workspace)
-            case .settings:   SettingsView()
+            case .dashboard:    DashboardView(workspace: workspace)
+            case .customers:    CustomersListView(workspace: workspace)
+            case .leads:        LeadsListView(workspace: workspace)
+            case .appointments: AppointmentsListView(workspace: workspace)
+            case .quotes:       QuotesListView(workspace: workspace)
+            case .invoices:     InvoicesListView(workspace: workspace)
+            case .todos:        TodoListView(workspace: workspace)
+            case .costs:        CostsListView(workspace: workspace)
+            case .taxes:        TaxView(workspace: workspace)
+            case .settings:     SettingsView()
             }
         } else {
             ContentUnavailableView(

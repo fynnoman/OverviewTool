@@ -8,19 +8,19 @@
 
 /* Begin PBXBuildFile section */
 		02944ECB74F312AF94D585BD /* SaveButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19B1248ADAF0F658C0358B57 /* SaveButton.swift */; };
+		070D1ADDF6FC2154CD79D5CD /* LeadEmail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6868E2850045F3F1B1B222BE /* LeadEmail.swift */; };
 		0E1A46188A250B244CD34E7D /* Lead.swift in Sources */ = {isa = PBXBuildFile; fileRef = B79764C3C46C01987639F408 /* Lead.swift */; };
+		119347E34EE4D2CD552872D2 /* DeductibleExpense.swift in Sources */ = {isa = PBXBuildFile; fileRef = E33ADBE9764DB4DD1BD8D05B /* DeductibleExpense.swift */; };
 		1252F574CB4C207939D762C5 /* OCRService.swift in Sources */ = {isa = PBXBuildFile; fileRef = EACA4944494BB313C484CD05 /* OCRService.swift */; };
+		15E1EAEFD5DAC03013ED6749 /* Appointment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26E6B2F1976C33D4C75D4752 /* Appointment.swift */; };
 		1B13DED7D3F9804CA267A216 /* Cost.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC91A5D7C184A1B720220D0C /* Cost.swift */; };
+		1B464BF9CBDAD4D170E5A336 /* CostsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5019A6D8AC35EF68408BB00 /* CostsListView.swift */; };
 		22F14BD63A75B99E3D7A24CE /* PDFRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F098F5875B3C62D2B44E2890 /* PDFRenderer.swift */; };
+		274BF76C6599BF8E77D3FA6C /* TodoListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F44F815476717E5FC53B8B3 /* TodoListView.swift */; };
+		29E36670E211E22C4F84C1A2 /* kaching.wav in Resources */ = {isa = PBXBuildFile; fileRef = 776064E1801E09A174ED69DC /* kaching.wav */; };
 		2C8EC815604492FBC8575BBB /* Invoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = E90626FD22F43B763B1E0050 /* Invoice.swift */; };
+		343441092E7787A2C50B589E /* AppointmentsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C3025FCEBD8FB3E978EE512 /* AppointmentsListView.swift */; };
 		3FE577C0FFEB7C132BAD2A31 /* UploadedInvoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 828128D74A08D6453E4CC493 /* UploadedInvoice.swift */; };
-		AAAA000000000000000000A1 /* CashIncome.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA000000000000000000B1 /* CashIncome.swift */; };
-		BBBB000000000000000000A1 /* DeductibleExpense.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB000000000000000000B1 /* DeductibleExpense.swift */; };
-		BBBB000000000000000000A2 /* CostsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB000000000000000000B2 /* CostsListView.swift */; };
-		BBBB000000000000000000A3 /* TodoListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBB000000000000000000B3 /* TodoListView.swift */; };
-		CCCC000000000000000000A1 /* Todo.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCCC000000000000000000B1 /* Todo.swift */; };
-		DDDD000000000000000000A1 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = DDDD000000000000000000B1 /* Assets.xcassets */; };
-		EEEE000000000000000000A1 /* TaxView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEEE000000000000000000B1 /* TaxView.swift */; };
 		40CD961142230F2C98B9B29E /* FyluAgencyApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B376A4A3F6945839C2B6E104 /* FyluAgencyApp.swift */; };
 		484DA24B28CBFD2FFCCC2F3A /* WorkspaceSwitcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEAB2F251163647AFC39D2B0 /* WorkspaceSwitcher.swift */; };
 		49991F4570436033547A509A /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F99FA030121C4394DAA69F7 /* KeychainService.swift */; };
@@ -29,45 +29,63 @@
 		5DBCC9B7B41B63463D1D267D /* LeadsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CB08591EFAFA4CBA1BB7143 /* LeadsListView.swift */; };
 		5FAE40EE6925839040C4EF46 /* Customer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86B246E0F2A23B4E9C0CBDDB /* Customer.swift */; };
 		601ED83746D0E8DB27E7BD3A /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DF13C78A3B41A66F227380D /* ContentView.swift */; };
+		717F8379E44FECCE1222E1D8 /* QuotesListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23AA3324E7EDEFACA2D919E9 /* QuotesListView.swift */; };
 		723F1F503EB6326A62B66CC4 /* InvoicesListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DB392CC85E6C9A2B183876A /* InvoicesListView.swift */; };
 		822D4A8DDC6FFF13693090CC /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD5CB44758048094C9708D78 /* AppState.swift */; };
 		8562CC9BA13ABD04CE3FCE0E /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6CF5AA7EE06E27D3E7635B8 /* DashboardView.swift */; };
+		85DF83BC0D2274E3305B6B0A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8E18F9E439BC42B810ECB5EF /* Assets.xcassets */; };
+		85E1D6558E7B23DFC366C8F7 /* GrossInvoicesDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6615AF808D637F9A63A4D6C3 /* GrossInvoicesDetailView.swift */; };
 		8BD2E8C0BBA3D37014524940 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7B2007F70A9AAB0EDDCD3A7 /* SettingsView.swift */; };
 		8FBC2968CD0F88BF7007B186 /* InvoiceDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3148B0DB96812B50B2CBAF58 /* InvoiceDetailView.swift */; };
+		94E1DA23B6BBA98EC147F723 /* SoundPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D85B2626257B985AE0E33610 /* SoundPlayer.swift */; };
 		99F3FCB5F4A23896731064AF /* CustomersListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0C834C88CDDBA1691B46EE7 /* CustomersListView.swift */; };
+		B6687676C53E2164FF85976D /* Todo.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1BD3D061D590EE6D932DFC6 /* Todo.swift */; };
+		B95B05FCC7D5F5FAB1037E10 /* CashIncome.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68BA08DE9EDBE6E78FCD910E /* CashIncome.swift */; };
+		C4143C9EE3FF05DF1DF84079 /* Quote.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DA57EE2276C50B9FC1FEB16 /* Quote.swift */; };
 		C4A814CEE8EFAD545401A5B9 /* CustomerDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75DEECBB06F75AF3FCEE064A /* CustomerDetailView.swift */; };
+		C55F30251E5242D10C5D16CB /* QuoteDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A94652B86FAB2A4AD934317 /* QuoteDetailView.swift */; };
 		D7D788463CACB7A6870D2A2F /* Formatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAF1C44D05620539DA80ED2E /* Formatting.swift */; };
 		EF0519E19981F97BB9699949 /* Workspace.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EE8832059F4AAC24FD999DC /* Workspace.swift */; };
+		FAF71A0D62C4415253599579 /* TaxView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 549373DEB4B348FAC5B0D768 /* TaxView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		19B1248ADAF0F658C0358B57 /* SaveButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaveButton.swift; sourceTree = "<group>"; };
+		1A94652B86FAB2A4AD934317 /* QuoteDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuoteDetailView.swift; sourceTree = "<group>"; };
 		1DB392CC85E6C9A2B183876A /* InvoicesListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InvoicesListView.swift; sourceTree = "<group>"; };
 		1F99FA030121C4394DAA69F7 /* KeychainService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeychainService.swift; sourceTree = "<group>"; };
+		23AA3324E7EDEFACA2D919E9 /* QuotesListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuotesListView.swift; sourceTree = "<group>"; };
+		26E6B2F1976C33D4C75D4752 /* Appointment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Appointment.swift; sourceTree = "<group>"; };
+		2DA57EE2276C50B9FC1FEB16 /* Quote.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Quote.swift; sourceTree = "<group>"; };
 		2DF13C78A3B41A66F227380D /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		3148B0DB96812B50B2CBAF58 /* InvoiceDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InvoiceDetailView.swift; sourceTree = "<group>"; };
 		3CCCF567118988AC1F186C10 /* OpenAIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIService.swift; sourceTree = "<group>"; };
+		549373DEB4B348FAC5B0D768 /* TaxView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaxView.swift; sourceTree = "<group>"; };
+		5F44F815476717E5FC53B8B3 /* TodoListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoListView.swift; sourceTree = "<group>"; };
+		6615AF808D637F9A63A4D6C3 /* GrossInvoicesDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GrossInvoicesDetailView.swift; sourceTree = "<group>"; };
+		6868E2850045F3F1B1B222BE /* LeadEmail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeadEmail.swift; sourceTree = "<group>"; };
+		68BA08DE9EDBE6E78FCD910E /* CashIncome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashIncome.swift; sourceTree = "<group>"; };
 		70F44E20FBF5B9E831935D05 /* Issue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Issue.swift; sourceTree = "<group>"; };
 		75DEECBB06F75AF3FCEE064A /* CustomerDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomerDetailView.swift; sourceTree = "<group>"; };
+		776064E1801E09A174ED69DC /* kaching.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = kaching.wav; sourceTree = "<group>"; };
+		7C3025FCEBD8FB3E978EE512 /* AppointmentsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppointmentsListView.swift; sourceTree = "<group>"; };
 		7CB08591EFAFA4CBA1BB7143 /* LeadsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeadsListView.swift; sourceTree = "<group>"; };
 		7CF92F3CF61AC8974707FE06 /* FyluAgency.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FyluAgency.entitlements; sourceTree = "<group>"; };
 		828128D74A08D6453E4CC493 /* UploadedInvoice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UploadedInvoice.swift; sourceTree = "<group>"; };
-		AAAA000000000000000000B1 /* CashIncome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashIncome.swift; sourceTree = "<group>"; };
-		BBBB000000000000000000B1 /* DeductibleExpense.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeductibleExpense.swift; sourceTree = "<group>"; };
-		BBBB000000000000000000B2 /* CostsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CostsListView.swift; sourceTree = "<group>"; };
-		BBBB000000000000000000B3 /* TodoListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoListView.swift; sourceTree = "<group>"; };
-		CCCC000000000000000000B1 /* Todo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Todo.swift; sourceTree = "<group>"; };
-		DDDD000000000000000000B1 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		EEEE000000000000000000B1 /* TaxView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaxView.swift; sourceTree = "<group>"; };
 		86B246E0F2A23B4E9C0CBDDB /* Customer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Customer.swift; sourceTree = "<group>"; };
+		8E18F9E439BC42B810ECB5EF /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		8EE8832059F4AAC24FD999DC /* Workspace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Workspace.swift; sourceTree = "<group>"; };
 		AD5CB44758048094C9708D78 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
+		B1BD3D061D590EE6D932DFC6 /* Todo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Todo.swift; sourceTree = "<group>"; };
 		B376A4A3F6945839C2B6E104 /* FyluAgencyApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FyluAgencyApp.swift; sourceTree = "<group>"; };
 		B6CF5AA7EE06E27D3E7635B8 /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
 		B79764C3C46C01987639F408 /* Lead.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Lead.swift; sourceTree = "<group>"; };
 		B7B2007F70A9AAB0EDDCD3A7 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		BAF1C44D05620539DA80ED2E /* Formatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Formatting.swift; sourceTree = "<group>"; };
+		D5019A6D8AC35EF68408BB00 /* CostsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CostsListView.swift; sourceTree = "<group>"; };
+		D85B2626257B985AE0E33610 /* SoundPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundPlayer.swift; sourceTree = "<group>"; };
 		E0C834C88CDDBA1691B46EE7 /* CustomersListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomersListView.swift; sourceTree = "<group>"; };
+		E33ADBE9764DB4DD1BD8D05B /* DeductibleExpense.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeductibleExpense.swift; sourceTree = "<group>"; };
 		E6144CDBB36AAC0D6C03A29D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		E90626FD22F43B763B1E0050 /* Invoice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Invoice.swift; sourceTree = "<group>"; };
 		EACA4944494BB313C484CD05 /* OCRService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OCRService.swift; sourceTree = "<group>"; };
@@ -81,14 +99,17 @@
 		069639012283CFA253BD805B /* Models */ = {
 			isa = PBXGroup;
 			children = (
-				AAAA000000000000000000B1 /* CashIncome.swift */,
+				26E6B2F1976C33D4C75D4752 /* Appointment.swift */,
+				68BA08DE9EDBE6E78FCD910E /* CashIncome.swift */,
 				FC91A5D7C184A1B720220D0C /* Cost.swift */,
 				86B246E0F2A23B4E9C0CBDDB /* Customer.swift */,
-				BBBB000000000000000000B1 /* DeductibleExpense.swift */,
-				CCCC000000000000000000B1 /* Todo.swift */,
+				E33ADBE9764DB4DD1BD8D05B /* DeductibleExpense.swift */,
 				E90626FD22F43B763B1E0050 /* Invoice.swift */,
 				70F44E20FBF5B9E831935D05 /* Issue.swift */,
 				B79764C3C46C01987639F408 /* Lead.swift */,
+				6868E2850045F3F1B1B222BE /* LeadEmail.swift */,
+				2DA57EE2276C50B9FC1FEB16 /* Quote.swift */,
+				B1BD3D061D590EE6D932DFC6 /* Todo.swift */,
 				828128D74A08D6453E4CC493 /* UploadedInvoice.swift */,
 				8EE8832059F4AAC24FD999DC /* Workspace.swift */,
 			);
@@ -109,10 +130,11 @@
 			children = (
 				3B2CA02EC9808F1DA64D9554 /* Components */,
 				069639012283CFA253BD805B /* Models */,
+				D3414B2F5AB089D75E1630ED /* Resources */,
 				9D5730760A2506944BF96472 /* Services */,
 				7EFA0D37EED2F57F465DCAD6 /* Views */,
 				AD5CB44758048094C9708D78 /* AppState.swift */,
-				DDDD000000000000000000B1 /* Assets.xcassets */,
+				8E18F9E439BC42B810ECB5EF /* Assets.xcassets */,
 				7CF92F3CF61AC8974707FE06 /* FyluAgency.entitlements */,
 				B376A4A3F6945839C2B6E104 /* FyluAgencyApp.swift */,
 				E6144CDBB36AAC0D6C03A29D /* Info.plist */,
@@ -123,17 +145,21 @@
 		7EFA0D37EED2F57F465DCAD6 /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				7C3025FCEBD8FB3E978EE512 /* AppointmentsListView.swift */,
 				2DF13C78A3B41A66F227380D /* ContentView.swift */,
-				BBBB000000000000000000B2 /* CostsListView.swift */,
+				D5019A6D8AC35EF68408BB00 /* CostsListView.swift */,
 				75DEECBB06F75AF3FCEE064A /* CustomerDetailView.swift */,
 				E0C834C88CDDBA1691B46EE7 /* CustomersListView.swift */,
 				B6CF5AA7EE06E27D3E7635B8 /* DashboardView.swift */,
+				6615AF808D637F9A63A4D6C3 /* GrossInvoicesDetailView.swift */,
 				3148B0DB96812B50B2CBAF58 /* InvoiceDetailView.swift */,
 				1DB392CC85E6C9A2B183876A /* InvoicesListView.swift */,
 				7CB08591EFAFA4CBA1BB7143 /* LeadsListView.swift */,
+				1A94652B86FAB2A4AD934317 /* QuoteDetailView.swift */,
+				23AA3324E7EDEFACA2D919E9 /* QuotesListView.swift */,
 				B7B2007F70A9AAB0EDDCD3A7 /* SettingsView.swift */,
-				EEEE000000000000000000B1 /* TaxView.swift */,
-				BBBB000000000000000000B3 /* TodoListView.swift */,
+				549373DEB4B348FAC5B0D768 /* TaxView.swift */,
+				5F44F815476717E5FC53B8B3 /* TodoListView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -146,6 +172,7 @@
 				EACA4944494BB313C484CD05 /* OCRService.swift */,
 				3CCCF567118988AC1F186C10 /* OpenAIService.swift */,
 				F098F5875B3C62D2B44E2890 /* PDFRenderer.swift */,
+				D85B2626257B985AE0E33610 /* SoundPlayer.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -166,6 +193,14 @@
 			);
 			sourceTree = "<group>";
 		};
+		D3414B2F5AB089D75E1630ED /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				776064E1801E09A174ED69DC /* kaching.wav */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -174,7 +209,7 @@
 			buildConfigurationList = ECC381CDDAA065363B73B6AB /* Build configuration list for PBXNativeTarget "FyluAgency" */;
 			buildPhases = (
 				86F5E6F088426D65BAA54974 /* Sources */,
-				DDDD000000000000000000C1 /* Resources */,
+				3F8742150F3CA3F3E8A95CC4 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -221,38 +256,58 @@
 		};
 /* End PBXProject section */
 
+/* Begin PBXResourcesBuildPhase section */
+		3F8742150F3CA3F3E8A95CC4 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				85DF83BC0D2274E3305B6B0A /* Assets.xcassets in Resources */,
+				29E36670E211E22C4F84C1A2 /* kaching.wav in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		86F5E6F088426D65BAA54974 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 				822D4A8DDC6FFF13693090CC /* AppState.swift in Sources */,
-				AAAA000000000000000000A1 /* CashIncome.swift in Sources */,
+				15E1EAEFD5DAC03013ED6749 /* Appointment.swift in Sources */,
+				343441092E7787A2C50B589E /* AppointmentsListView.swift in Sources */,
+				B95B05FCC7D5F5FAB1037E10 /* CashIncome.swift in Sources */,
 				601ED83746D0E8DB27E7BD3A /* ContentView.swift in Sources */,
 				1B13DED7D3F9804CA267A216 /* Cost.swift in Sources */,
-				BBBB000000000000000000A2 /* CostsListView.swift in Sources */,
+				1B464BF9CBDAD4D170E5A336 /* CostsListView.swift in Sources */,
 				5FAE40EE6925839040C4EF46 /* Customer.swift in Sources */,
 				C4A814CEE8EFAD545401A5B9 /* CustomerDetailView.swift in Sources */,
 				99F3FCB5F4A23896731064AF /* CustomersListView.swift in Sources */,
 				8562CC9BA13ABD04CE3FCE0E /* DashboardView.swift in Sources */,
-				BBBB000000000000000000A1 /* DeductibleExpense.swift in Sources */,
-				CCCC000000000000000000A1 /* Todo.swift in Sources */,
-				EEEE000000000000000000A1 /* TaxView.swift in Sources */,
-				BBBB000000000000000000A3 /* TodoListView.swift in Sources */,
+				119347E34EE4D2CD552872D2 /* DeductibleExpense.swift in Sources */,
 				D7D788463CACB7A6870D2A2F /* Formatting.swift in Sources */,
 				40CD961142230F2C98B9B29E /* FyluAgencyApp.swift in Sources */,
+				85E1D6558E7B23DFC366C8F7 /* GrossInvoicesDetailView.swift in Sources */,
 				2C8EC815604492FBC8575BBB /* Invoice.swift in Sources */,
 				8FBC2968CD0F88BF7007B186 /* InvoiceDetailView.swift in Sources */,
 				723F1F503EB6326A62B66CC4 /* InvoicesListView.swift in Sources */,
 				49C0D8324B0C18D4443C3ABC /* Issue.swift in Sources */,
 				49991F4570436033547A509A /* KeychainService.swift in Sources */,
 				0E1A46188A250B244CD34E7D /* Lead.swift in Sources */,
+				070D1ADDF6FC2154CD79D5CD /* LeadEmail.swift in Sources */,
 				5DBCC9B7B41B63463D1D267D /* LeadsListView.swift in Sources */,
 				1252F574CB4C207939D762C5 /* OCRService.swift in Sources */,
 				55CE34277DACE1546DBE9D8E /* OpenAIService.swift in Sources */,
 				22F14BD63A75B99E3D7A24CE /* PDFRenderer.swift in Sources */,
+				C4143C9EE3FF05DF1DF84079 /* Quote.swift in Sources */,
+				C55F30251E5242D10C5D16CB /* QuoteDetailView.swift in Sources */,
+				717F8379E44FECCE1222E1D8 /* QuotesListView.swift in Sources */,
 				02944ECB74F312AF94D585BD /* SaveButton.swift in Sources */,
 				8BD2E8C0BBA3D37014524940 /* SettingsView.swift in Sources */,
+				94E1DA23B6BBA98EC147F723 /* SoundPlayer.swift in Sources */,
+				FAF71A0D62C4415253599579 /* TaxView.swift in Sources */,
+				B6687676C53E2164FF85976D /* Todo.swift in Sources */,
+				274BF76C6599BF8E77D3FA6C /* TodoListView.swift in Sources */,
 				3FE577C0FFEB7C132BAD2A31 /* UploadedInvoice.swift in Sources */,
 				EF0519E19981F97BB9699949 /* Workspace.swift in Sources */,
 				484DA24B28CBFD2FFCCC2F3A /* WorkspaceSwitcher.swift in Sources */,
@@ -260,17 +315,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
-
-/* Begin PBXResourcesBuildPhase section */
-		DDDD000000000000000000C1 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				DDDD000000000000000000A1 /* Assets.xcassets in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-/* End PBXResourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
 		221B89D6F186CB94332C552B /* Release */ = {
