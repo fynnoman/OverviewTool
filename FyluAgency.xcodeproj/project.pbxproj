@@ -20,16 +20,20 @@
 		29E36670E211E22C4F84C1A2 /* kaching.wav in Resources */ = {isa = PBXBuildFile; fileRef = 776064E1801E09A174ED69DC /* kaching.wav */; };
 		2C8EC815604492FBC8575BBB /* Invoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = E90626FD22F43B763B1E0050 /* Invoice.swift */; };
 		343441092E7787A2C50B589E /* AppointmentsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C3025FCEBD8FB3E978EE512 /* AppointmentsListView.swift */; };
+		376F588CF9933DE20E576B0B /* MailboxView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFD14DFBC4CD7D3435286810 /* MailboxView.swift */; };
+		3E8040C5CB584DEF91ADF457 /* IMAPResponseParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = C751FF9CC00B7E3F304BB6E4 /* IMAPResponseParser.swift */; };
 		3FE577C0FFEB7C132BAD2A31 /* UploadedInvoice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 828128D74A08D6453E4CC493 /* UploadedInvoice.swift */; };
 		40CD961142230F2C98B9B29E /* FyluAgencyApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B376A4A3F6945839C2B6E104 /* FyluAgencyApp.swift */; };
 		484DA24B28CBFD2FFCCC2F3A /* WorkspaceSwitcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEAB2F251163647AFC39D2B0 /* WorkspaceSwitcher.swift */; };
 		49991F4570436033547A509A /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F99FA030121C4394DAA69F7 /* KeychainService.swift */; };
 		49C0D8324B0C18D4443C3ABC /* Issue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70F44E20FBF5B9E831935D05 /* Issue.swift */; };
+		4F4727D88DE984C4404EA741 /* MailKeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5DB365F46153A8764C58D5D /* MailKeychainService.swift */; };
 		4FA58F0A279547E723CC39AC /* Idea.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50E4F56569280C535DF3155A /* Idea.swift */; };
 		55CE34277DACE1546DBE9D8E /* OpenAIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CCCF567118988AC1F186C10 /* OpenAIService.swift */; };
 		5DBCC9B7B41B63463D1D267D /* LeadsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CB08591EFAFA4CBA1BB7143 /* LeadsListView.swift */; };
 		5FAE40EE6925839040C4EF46 /* Customer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86B246E0F2A23B4E9C0CBDDB /* Customer.swift */; };
 		601ED83746D0E8DB27E7BD3A /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DF13C78A3B41A66F227380D /* ContentView.swift */; };
+		6D03EC4C0FE7B8CDAB165159 /* MailSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F27385715420800903E7078 /* MailSyncService.swift */; };
 		717F8379E44FECCE1222E1D8 /* QuotesListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23AA3324E7EDEFACA2D919E9 /* QuotesListView.swift */; };
 		723F1F503EB6326A62B66CC4 /* InvoicesListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DB392CC85E6C9A2B183876A /* InvoicesListView.swift */; };
 		822D4A8DDC6FFF13693090CC /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD5CB44758048094C9708D78 /* AppState.swift */; };
@@ -37,16 +41,20 @@
 		85DF83BC0D2274E3305B6B0A /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 8E18F9E439BC42B810ECB5EF /* Assets.xcassets */; };
 		85E1D6558E7B23DFC366C8F7 /* GrossInvoicesDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6615AF808D637F9A63A4D6C3 /* GrossInvoicesDetailView.swift */; };
 		8BD2E8C0BBA3D37014524940 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7B2007F70A9AAB0EDDCD3A7 /* SettingsView.swift */; };
+		8E9023FD49B7EFC355124F04 /* MailAccount.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5ADB9192560E740A97E5BCE5 /* MailAccount.swift */; };
 		8FBC2968CD0F88BF7007B186 /* InvoiceDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3148B0DB96812B50B2CBAF58 /* InvoiceDetailView.swift */; };
+		9298C5F5EF455017BC587867 /* IMAPClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F8B7839A54BD4DC309290E9 /* IMAPClient.swift */; };
 		94E1DA23B6BBA98EC147F723 /* SoundPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D85B2626257B985AE0E33610 /* SoundPlayer.swift */; };
 		97C4DBF9A9EF7BA570116E7B /* IdeasListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D59C22658CE346D4363F830D /* IdeasListView.swift */; };
 		99F3FCB5F4A23896731064AF /* CustomersListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0C834C88CDDBA1691B46EE7 /* CustomersListView.swift */; };
+		B01B269302EA2250D547A67C /* MailMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DE028763A8B6A4D54ABDD6A /* MailMessage.swift */; };
 		B6687676C53E2164FF85976D /* Todo.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1BD3D061D590EE6D932DFC6 /* Todo.swift */; };
 		B95B05FCC7D5F5FAB1037E10 /* CashIncome.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68BA08DE9EDBE6E78FCD910E /* CashIncome.swift */; };
 		C4143C9EE3FF05DF1DF84079 /* Quote.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DA57EE2276C50B9FC1FEB16 /* Quote.swift */; };
 		C4A814CEE8EFAD545401A5B9 /* CustomerDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75DEECBB06F75AF3FCEE064A /* CustomerDetailView.swift */; };
 		C55F30251E5242D10C5D16CB /* QuoteDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A94652B86FAB2A4AD934317 /* QuoteDetailView.swift */; };
 		D7D788463CACB7A6870D2A2F /* Formatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAF1C44D05620539DA80ED2E /* Formatting.swift */; };
+		DF20E64485A83BEC07F9B7D8 /* MailProviderPresets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3B1F362565F8D724BDEEAFBD /* MailProviderPresets.swift */; };
 		EF0519E19981F97BB9699949 /* Workspace.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EE8832059F4AAC24FD999DC /* Workspace.swift */; };
 		FAF71A0D62C4415253599579 /* TaxView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 549373DEB4B348FAC5B0D768 /* TaxView.swift */; };
 /* End PBXBuildFile section */
@@ -60,10 +68,14 @@
 		26E6B2F1976C33D4C75D4752 /* Appointment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Appointment.swift; sourceTree = "<group>"; };
 		2DA57EE2276C50B9FC1FEB16 /* Quote.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Quote.swift; sourceTree = "<group>"; };
 		2DF13C78A3B41A66F227380D /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		2F27385715420800903E7078 /* MailSyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MailSyncService.swift; sourceTree = "<group>"; };
 		3148B0DB96812B50B2CBAF58 /* InvoiceDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InvoiceDetailView.swift; sourceTree = "<group>"; };
+		3B1F362565F8D724BDEEAFBD /* MailProviderPresets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MailProviderPresets.swift; sourceTree = "<group>"; };
 		3CCCF567118988AC1F186C10 /* OpenAIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIService.swift; sourceTree = "<group>"; };
+		4DE028763A8B6A4D54ABDD6A /* MailMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MailMessage.swift; sourceTree = "<group>"; };
 		50E4F56569280C535DF3155A /* Idea.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Idea.swift; sourceTree = "<group>"; };
 		549373DEB4B348FAC5B0D768 /* TaxView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaxView.swift; sourceTree = "<group>"; };
+		5ADB9192560E740A97E5BCE5 /* MailAccount.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MailAccount.swift; sourceTree = "<group>"; };
 		5F44F815476717E5FC53B8B3 /* TodoListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoListView.swift; sourceTree = "<group>"; };
 		6615AF808D637F9A63A4D6C3 /* GrossInvoicesDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GrossInvoicesDetailView.swift; sourceTree = "<group>"; };
 		6868E2850045F3F1B1B222BE /* LeadEmail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeadEmail.swift; sourceTree = "<group>"; };
@@ -74,22 +86,26 @@
 		7C3025FCEBD8FB3E978EE512 /* AppointmentsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppointmentsListView.swift; sourceTree = "<group>"; };
 		7CB08591EFAFA4CBA1BB7143 /* LeadsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeadsListView.swift; sourceTree = "<group>"; };
 		7CF92F3CF61AC8974707FE06 /* FyluAgency.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FyluAgency.entitlements; sourceTree = "<group>"; };
+		7F8B7839A54BD4DC309290E9 /* IMAPClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IMAPClient.swift; sourceTree = "<group>"; };
 		828128D74A08D6453E4CC493 /* UploadedInvoice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UploadedInvoice.swift; sourceTree = "<group>"; };
 		86B246E0F2A23B4E9C0CBDDB /* Customer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Customer.swift; sourceTree = "<group>"; };
 		8E18F9E439BC42B810ECB5EF /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		8EE8832059F4AAC24FD999DC /* Workspace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Workspace.swift; sourceTree = "<group>"; };
 		AD5CB44758048094C9708D78 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
+		AFD14DFBC4CD7D3435286810 /* MailboxView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MailboxView.swift; sourceTree = "<group>"; };
 		B1BD3D061D590EE6D932DFC6 /* Todo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Todo.swift; sourceTree = "<group>"; };
 		B376A4A3F6945839C2B6E104 /* FyluAgencyApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FyluAgencyApp.swift; sourceTree = "<group>"; };
 		B6CF5AA7EE06E27D3E7635B8 /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
 		B79764C3C46C01987639F408 /* Lead.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Lead.swift; sourceTree = "<group>"; };
 		B7B2007F70A9AAB0EDDCD3A7 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		BAF1C44D05620539DA80ED2E /* Formatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Formatting.swift; sourceTree = "<group>"; };
+		C751FF9CC00B7E3F304BB6E4 /* IMAPResponseParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IMAPResponseParser.swift; sourceTree = "<group>"; };
 		D5019A6D8AC35EF68408BB00 /* CostsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CostsListView.swift; sourceTree = "<group>"; };
 		D59C22658CE346D4363F830D /* IdeasListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IdeasListView.swift; sourceTree = "<group>"; };
 		D85B2626257B985AE0E33610 /* SoundPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoundPlayer.swift; sourceTree = "<group>"; };
 		E0C834C88CDDBA1691B46EE7 /* CustomersListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomersListView.swift; sourceTree = "<group>"; };
 		E33ADBE9764DB4DD1BD8D05B /* DeductibleExpense.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeductibleExpense.swift; sourceTree = "<group>"; };
+		E5DB365F46153A8764C58D5D /* MailKeychainService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MailKeychainService.swift; sourceTree = "<group>"; };
 		E6144CDBB36AAC0D6C03A29D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		E90626FD22F43B763B1E0050 /* Invoice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Invoice.swift; sourceTree = "<group>"; };
 		EACA4944494BB313C484CD05 /* OCRService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OCRService.swift; sourceTree = "<group>"; };
@@ -113,6 +129,8 @@
 				70F44E20FBF5B9E831935D05 /* Issue.swift */,
 				B79764C3C46C01987639F408 /* Lead.swift */,
 				6868E2850045F3F1B1B222BE /* LeadEmail.swift */,
+				5ADB9192560E740A97E5BCE5 /* MailAccount.swift */,
+				4DE028763A8B6A4D54ABDD6A /* MailMessage.swift */,
 				2DA57EE2276C50B9FC1FEB16 /* Quote.swift */,
 				B1BD3D061D590EE6D932DFC6 /* Todo.swift */,
 				828128D74A08D6453E4CC493 /* UploadedInvoice.swift */,
@@ -161,6 +179,7 @@
 				3148B0DB96812B50B2CBAF58 /* InvoiceDetailView.swift */,
 				1DB392CC85E6C9A2B183876A /* InvoicesListView.swift */,
 				7CB08591EFAFA4CBA1BB7143 /* LeadsListView.swift */,
+				AFD14DFBC4CD7D3435286810 /* MailboxView.swift */,
 				1A94652B86FAB2A4AD934317 /* QuoteDetailView.swift */,
 				23AA3324E7EDEFACA2D919E9 /* QuotesListView.swift */,
 				B7B2007F70A9AAB0EDDCD3A7 /* SettingsView.swift */,
@@ -174,7 +193,12 @@
 			isa = PBXGroup;
 			children = (
 				BAF1C44D05620539DA80ED2E /* Formatting.swift */,
+				7F8B7839A54BD4DC309290E9 /* IMAPClient.swift */,
+				C751FF9CC00B7E3F304BB6E4 /* IMAPResponseParser.swift */,
 				1F99FA030121C4394DAA69F7 /* KeychainService.swift */,
+				E5DB365F46153A8764C58D5D /* MailKeychainService.swift */,
+				3B1F362565F8D724BDEEAFBD /* MailProviderPresets.swift */,
+				2F27385715420800903E7078 /* MailSyncService.swift */,
 				EACA4944494BB313C484CD05 /* OCRService.swift */,
 				3CCCF567118988AC1F186C10 /* OpenAIService.swift */,
 				F098F5875B3C62D2B44E2890 /* PDFRenderer.swift */,
@@ -294,6 +318,8 @@
 				D7D788463CACB7A6870D2A2F /* Formatting.swift in Sources */,
 				40CD961142230F2C98B9B29E /* FyluAgencyApp.swift in Sources */,
 				85E1D6558E7B23DFC366C8F7 /* GrossInvoicesDetailView.swift in Sources */,
+				9298C5F5EF455017BC587867 /* IMAPClient.swift in Sources */,
+				3E8040C5CB584DEF91ADF457 /* IMAPResponseParser.swift in Sources */,
 				4FA58F0A279547E723CC39AC /* Idea.swift in Sources */,
 				97C4DBF9A9EF7BA570116E7B /* IdeasListView.swift in Sources */,
 				2C8EC815604492FBC8575BBB /* Invoice.swift in Sources */,
@@ -304,6 +330,12 @@
 				0E1A46188A250B244CD34E7D /* Lead.swift in Sources */,
 				070D1ADDF6FC2154CD79D5CD /* LeadEmail.swift in Sources */,
 				5DBCC9B7B41B63463D1D267D /* LeadsListView.swift in Sources */,
+				8E9023FD49B7EFC355124F04 /* MailAccount.swift in Sources */,
+				4F4727D88DE984C4404EA741 /* MailKeychainService.swift in Sources */,
+				B01B269302EA2250D547A67C /* MailMessage.swift in Sources */,
+				DF20E64485A83BEC07F9B7D8 /* MailProviderPresets.swift in Sources */,
+				6D03EC4C0FE7B8CDAB165159 /* MailSyncService.swift in Sources */,
+				376F588CF9933DE20E576B0B /* MailboxView.swift in Sources */,
 				1252F574CB4C207939D762C5 /* OCRService.swift in Sources */,
 				55CE34277DACE1546DBE9D8E /* OpenAIService.swift in Sources */,
 				22F14BD63A75B99E3D7A24CE /* PDFRenderer.swift in Sources */,

@@ -22,7 +22,9 @@ struct FyluAgencyApp: App {
             Quote.self,
             QuoteItem.self,
             Appointment.self,
-            Idea.self
+            Idea.self,
+            MailAccount.self,
+            MailMessage.self
         ])
         let config = ModelConfiguration(
             "FyluAgency",

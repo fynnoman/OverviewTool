@@ -74,6 +74,7 @@ struct ContentView: View {
             case .ideas:        IdeasListView(workspace: workspace)
             case .costs:        CostsListView(workspace: workspace)
             case .taxes:        TaxView(workspace: workspace)
+            case .mailbox:      MailboxView(workspace: workspace)
             case .settings:     SettingsView()
             }
         } else {
