@@ -90,7 +90,7 @@ enum IMAPResponseParser {
         let subject = MIMEHeaderDecoder.decode(subjectStr)
         let fromName = MIMEHeaderDecoder.decode(fromList.name)
         let fromAddress = fromList.address
-        let bodyDecoded = plainTextFallback(from: bodyText)
+        let bodyDecoded = MIMEBodyParser.extractPlainText(from: bodyText)
 
         return IMAPFetchedMessage(
             uid: uid,
@@ -136,20 +136,6 @@ enum IMAPResponseParser {
             out.append(Addr(name: name, address: addr))
         }
         return out
-    }
-
-    /// If the fetched body looks like MIME (headers + blank line + payload),
-    /// strip the headers. Best-effort — a proper MIME walker comes later.
-    private static func plainTextFallback(from raw: String) -> String {
-        var text = raw
-        // Some servers include a leading empty line before the body.
-        if text.hasPrefix("\r\n") { text.removeFirst(2) }
-        else if text.hasPrefix("\n") { text.removeFirst(1) }
-        // Very light HTML strip so preview lines aren't full of tags.
-        if text.contains("<") && text.contains(">") {
-            text = text.replacingOccurrences(of: "<[^>]+>", with: " ", options: .regularExpression)
-        }
-        return text
     }
 
     // MARK: - Tokenizer

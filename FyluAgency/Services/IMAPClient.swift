@@ -101,8 +101,11 @@ actor IMAPClient {
         let from = max(1, exists - limit + 1)
         let range = "\(from):\(exists)"
 
+        // Fetch the full RFC822 message via BODY.PEEK[] — [TEXT] alone would
+        // drop the top-level Content-Type/Transfer-Encoding headers we need
+        // to decode single-part mails properly.
         let lines = try await sendAndCollect(
-            "FETCH \(range) (UID FLAGS ENVELOPE BODY.PEEK[TEXT])"
+            "FETCH \(range) (UID FLAGS ENVELOPE BODY.PEEK[])"
         )
         return IMAPResponseParser.parseFetchResponses(lines)
     }

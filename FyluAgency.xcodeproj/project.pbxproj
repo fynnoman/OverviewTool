@@ -50,6 +50,7 @@
 		B01B269302EA2250D547A67C /* MailMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4DE028763A8B6A4D54ABDD6A /* MailMessage.swift */; };
 		B6687676C53E2164FF85976D /* Todo.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1BD3D061D590EE6D932DFC6 /* Todo.swift */; };
 		B95B05FCC7D5F5FAB1037E10 /* CashIncome.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68BA08DE9EDBE6E78FCD910E /* CashIncome.swift */; };
+		BEEBFE9107A1C7785169A8D5 /* MIMEBodyParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 61C009676DE649DE7BF8D049 /* MIMEBodyParser.swift */; };
 		C4143C9EE3FF05DF1DF84079 /* Quote.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DA57EE2276C50B9FC1FEB16 /* Quote.swift */; };
 		C4A814CEE8EFAD545401A5B9 /* CustomerDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75DEECBB06F75AF3FCEE064A /* CustomerDetailView.swift */; };
 		C55F30251E5242D10C5D16CB /* QuoteDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A94652B86FAB2A4AD934317 /* QuoteDetailView.swift */; };
@@ -77,6 +78,7 @@
 		549373DEB4B348FAC5B0D768 /* TaxView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaxView.swift; sourceTree = "<group>"; };
 		5ADB9192560E740A97E5BCE5 /* MailAccount.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MailAccount.swift; sourceTree = "<group>"; };
 		5F44F815476717E5FC53B8B3 /* TodoListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodoListView.swift; sourceTree = "<group>"; };
+		61C009676DE649DE7BF8D049 /* MIMEBodyParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MIMEBodyParser.swift; sourceTree = "<group>"; };
 		6615AF808D637F9A63A4D6C3 /* GrossInvoicesDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GrossInvoicesDetailView.swift; sourceTree = "<group>"; };
 		6868E2850045F3F1B1B222BE /* LeadEmail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeadEmail.swift; sourceTree = "<group>"; };
 		68BA08DE9EDBE6E78FCD910E /* CashIncome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashIncome.swift; sourceTree = "<group>"; };
@@ -199,6 +201,7 @@
 				E5DB365F46153A8764C58D5D /* MailKeychainService.swift */,
 				3B1F362565F8D724BDEEAFBD /* MailProviderPresets.swift */,
 				2F27385715420800903E7078 /* MailSyncService.swift */,
+				61C009676DE649DE7BF8D049 /* MIMEBodyParser.swift */,
 				EACA4944494BB313C484CD05 /* OCRService.swift */,
 				3CCCF567118988AC1F186C10 /* OpenAIService.swift */,
 				F098F5875B3C62D2B44E2890 /* PDFRenderer.swift */,
@@ -330,6 +333,7 @@
 				0E1A46188A250B244CD34E7D /* Lead.swift in Sources */,
 				070D1ADDF6FC2154CD79D5CD /* LeadEmail.swift in Sources */,
 				5DBCC9B7B41B63463D1D267D /* LeadsListView.swift in Sources */,
+				BEEBFE9107A1C7785169A8D5 /* MIMEBodyParser.swift in Sources */,
 				8E9023FD49B7EFC355124F04 /* MailAccount.swift in Sources */,
 				4F4727D88DE984C4404EA741 /* MailKeychainService.swift in Sources */,
 				B01B269302EA2250D547A67C /* MailMessage.swift in Sources */,

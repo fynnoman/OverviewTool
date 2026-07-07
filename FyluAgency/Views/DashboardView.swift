@@ -69,6 +69,11 @@ struct DashboardView: View {
     /// und beim Workspace-Wechsel aus `workspace.businessProfile` befüllt.
     @State private var profileDraft: String = ""
     @State private var isSavingProfile: Bool = false
+    /// Wenn ein Profil schon existiert, zeigen wir eine kompakte Karte —
+    /// dieser Flag klappt den Editor auf, damit der Kontext nachträglich
+    /// erweitert / korrigiert werden kann (früher war das nach dem ersten
+    /// Speichern nicht mehr möglich).
+    @State private var isEditingProfile: Bool = false
 
     private var invoices: [Invoice] {
         workspace.customers.flatMap(\.invoices)
@@ -263,55 +268,111 @@ struct DashboardView: View {
         return range.longTitle
     }
 
-    /// Prominenter Setup-Block ganz oben. Erscheint nur, wenn der aktive
-    /// Workspace noch kein KI-Profil hat — sobald `businessProfile` oder
-    /// `businessKind` gesetzt ist, blendet sich der Banner aus. Nach dem
-    /// Speichern triggern wir direkt ein refresh, damit der nächste Klick
-    /// auf "Neue Vorschläge laden" nicht mehr nötig ist.
+    /// KI-Kontext-Karte ganz oben. Zwei Zustände:
+    ///  - **leer**: prominenter Setup-Block mit Editor, damit klar ist, dass
+    ///    die KI ohne Kontext generisch rät (früher: „Webdesign-Agentur").
+    ///  - **gesetzt**: kompakte Zeile mit dem aktuellen Profiltext + einem
+    ///    „Bearbeiten"-Button, der den Editor wieder ausklappt. Ohne die
+    ///    Bearbeiten-Option verschwand die Eingabe nach dem ersten
+    ///    Speichern komplett — Kontext nachträglich zu erweitern war so
+    ///    nicht mehr möglich.
     @ViewBuilder
     private var aiProfileBanner: some View {
-        let kind = (workspace.businessKind ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         let profile = (workspace.businessProfile ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-        if kind.isEmpty && profile.isEmpty {
-            VStack(alignment: .leading, spacing: 10) {
-                HStack(spacing: 8) {
-                    Image(systemName: "sparkles")
-                        .foregroundStyle(Color.accentColor)
-                    Text("KI braucht noch Kontext für \"\(workspace.name)\"")
-                        .font(.subheadline)
-                        .fontWeight(.semibold)
-                    Spacer()
-                }
-                Text("Beschreib kurz, was dieser Workspace verkauft — z. B. \"Software für Gebäudereiniger, B2B, 49–249 €/Monat\". Sonst rät die KI generisch (oft Webdesign), weil sie's nicht besser weiß.")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-                TextEditor(text: $profileDraft)
-                    .frame(minHeight: 70)
-                    .border(Color.gray.opacity(0.25))
-                HStack {
-                    Button {
-                        saveProfileFromBanner()
-                    } label: {
-                        Label(isSavingProfile ? "Speichere…" : "Speichern & KI neu laden",
-                              systemImage: "checkmark")
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(isSavingProfile || profileDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+        let isEmpty = profile.isEmpty
 
-                    Text("Detailliertere Felder findest du in den Einstellungen → KI-Profil.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    Spacer()
+        if isEmpty || isEditingProfile {
+            profileEditor(isFirstTimeSetup: isEmpty)
+        } else {
+            profileSummary(profile: profile)
+        }
+    }
+
+    private func profileEditor(isFirstTimeSetup: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: "sparkles")
+                    .foregroundStyle(Color.accentColor)
+                Text(isFirstTimeSetup
+                     ? "KI braucht noch Kontext für \"\(workspace.name)\""
+                     : "KI-Kontext für \"\(workspace.name)\" bearbeiten")
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                Spacer()
+                if !isFirstTimeSetup {
+                    Button("Abbrechen") {
+                        profileDraft = workspace.businessProfile ?? ""
+                        isEditingProfile = false
+                    }
+                    .buttonStyle(.borderless)
+                    .controlSize(.small)
                 }
             }
-            .padding(14)
-            .background(Color.accentColor.opacity(0.08))
-            .overlay(
-                RoundedRectangle(cornerRadius: 10)
-                    .stroke(Color.accentColor.opacity(0.35))
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 10))
+            Text("Beschreib kurz, was dieser Workspace verkauft — z. B. \"Software für Gebäudereiniger, B2B, 49–249 €/Monat\". Sonst rät die KI generisch (oft Webdesign), weil sie's nicht besser weiß.")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+            TextEditor(text: $profileDraft)
+                .frame(minHeight: 90)
+                .border(Color.gray.opacity(0.25))
+            HStack {
+                Button {
+                    saveProfileFromBanner()
+                } label: {
+                    Label(isSavingProfile ? "Speichere…" : "Speichern & KI neu laden",
+                          systemImage: "checkmark")
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(isSavingProfile || profileDraft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+
+                Text("Detailliertere Felder findest du in den Einstellungen → KI-Profil.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Spacer()
+            }
         }
+        .padding(14)
+        .background(Color.accentColor.opacity(0.08))
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(Color.accentColor.opacity(0.35))
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+    }
+
+    private func profileSummary(profile: String) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "sparkles")
+                .foregroundStyle(Color.accentColor)
+                .padding(.top, 2)
+            VStack(alignment: .leading, spacing: 3) {
+                Text("KI-Kontext")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .textCase(.uppercase)
+                    .tracking(0.5)
+                Text(profile)
+                    .font(.callout)
+                    .foregroundStyle(.primary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            Spacer(minLength: 8)
+            Button {
+                profileDraft = workspace.businessProfile ?? ""
+                isEditingProfile = true
+            } label: {
+                Label("Bearbeiten", systemImage: "pencil")
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+        }
+        .padding(12)
+        .background(Color.accentColor.opacity(0.05))
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(Color.accentColor.opacity(0.2))
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 
     private func saveProfileFromBanner() {
@@ -321,6 +382,7 @@ struct DashboardView: View {
         workspace.businessProfile = trimmed
         workspace.updatedAt = Date()
         try? modelContext.save()
+        isEditingProfile = false
         Task {
             await refreshUpsells(force: true)
             isSavingProfile = false
