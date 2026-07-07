@@ -188,8 +188,14 @@ actor IMAPClient {
         while true {
             // Guarantee we have at least one CRLF ahead, or find a literal marker.
             if let crlfRange = buffer.range(of: Data([0x0D, 0x0A])) {
-                let head = buffer.subdata(in: 0..<crlfRange.lowerBound)
-                buffer.removeSubrange(0..<crlfRange.upperBound)
+                // `Data.range(of:)` returns indices in the buffer's
+                // startIndex space, which is NOT guaranteed to be 0 after
+                // prior `removeSubrange` calls. Using a literal `0` here
+                // trapped `Data.subdata(in:)` on subsequent iterations —
+                // always anchor to `buffer.startIndex`.
+                let startIdx = buffer.startIndex
+                let head = buffer.subdata(in: startIdx..<crlfRange.lowerBound)
+                buffer.removeSubrange(startIdx..<crlfRange.upperBound)
                 line.append(head)
 
                 // Look at trailing "{N}" on this partial line — if present,
