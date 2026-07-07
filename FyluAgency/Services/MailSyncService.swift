@@ -37,9 +37,13 @@ final class MailSyncService {
             return
         }
 
+        // Clamp to valid TCP port range. Even a corrupt stored value would
+        // otherwise trap the UInt16 conversion during background sync and
+        // take the whole app down.
+        let safePort = UInt16(clamping: max(1, min(account.imapPort, 65535)))
         let client = IMAPClient(
             host: account.imapHost,
-            port: UInt16(account.imapPort),
+            port: safePort,
             username: account.username,
             password: password
         )

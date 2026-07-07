@@ -9,7 +9,6 @@ struct MailboxView: View {
 
     @Environment(\.modelContext) private var modelContext
     @Query private var accounts: [MailAccount]
-    @Query(sort: \MailMessage.date, order: .reverse) private var messages: [MailMessage]
 
     @State private var selectedAccountID: UUID?      // nil = alle Accounts
     @State private var selectedMessage: MailMessage?
@@ -20,14 +19,17 @@ struct MailboxView: View {
     init(workspace: Workspace) {
         self.workspace = workspace
         let wsID = workspace.id
+        // Only accounts get a direct @Query — messages are pulled through the
+        // account relation to avoid chained-optional predicates, which the
+        // SwiftData SQL compiler cannot translate (NSSQLGenerator crash).
         _accounts = Query(
             filter: #Predicate<MailAccount> { $0.workspace?.id == wsID },
             sort: \.createdAt
         )
-        _messages = Query(
-            filter: #Predicate<MailMessage> { $0.account?.workspace?.id == wsID },
-            sort: [SortDescriptor(\.date, order: .reverse)]
-        )
+    }
+
+    private var messages: [MailMessage] {
+        accounts.flatMap { $0.messages }.sorted { $0.date > $1.date }
     }
 
     private var filteredMessages: [MailMessage] {
@@ -441,9 +443,15 @@ struct AddMailAccountView: View {
         testSuccess = false
         defer { isTesting = false }
 
+        // Clamp to valid TCP port range — an over-large value would otherwise
+        // trap the UInt16 conversion and crash the whole app while the user
+        // is still filling out the sheet.
+        let portInt = Int(imapPort.trimmingCharacters(in: .whitespaces)) ?? 993
+        let safePort = UInt16(clamping: max(1, min(portInt, 65535)))
+
         let client = IMAPClient(
             host: imapHost.trimmingCharacters(in: .whitespaces),
-            port: UInt16(Int(imapPort) ?? 993),
+            port: safePort,
             username: username.trimmingCharacters(in: .whitespaces),
             password: password
         )
@@ -456,17 +464,22 @@ struct AddMailAccountView: View {
     }
 
     private func save() {
+        let portInt = Int(imapPort.trimmingCharacters(in: .whitespaces)) ?? 993
+        let safePort = max(1, min(portInt, 65535))
         let account = MailAccount(
             provider: provider,
             displayName: displayName.trimmingCharacters(in: .whitespaces),
             emailAddress: emailAddress.trimmingCharacters(in: .whitespaces),
             imapHost: imapHost.trimmingCharacters(in: .whitespaces),
-            imapPort: Int(imapPort) ?? 993,
+            imapPort: safePort,
             imapUseTLS: true,
             username: username.trimmingCharacters(in: .whitespaces)
         )
-        account.workspace = workspace
+        // Insert first, THEN wire up the relationship — assigning
+        // `.workspace` on an un-inserted @Model can leave SwiftData in an
+        // inconsistent state and abort on the next save().
         modelContext.insert(account)
+        account.workspace = workspace
         MailKeychainService.savePassword(password, account: account.keychainAccount)
         try? modelContext.save()
         dismiss()
