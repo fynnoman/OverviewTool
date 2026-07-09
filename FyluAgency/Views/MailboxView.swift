@@ -306,7 +306,8 @@ struct MailMessageDetailView: View {
 
                 Divider()
 
-                Text(message.bodyText.isEmpty ? "(kein Textinhalt)" : message.bodyText)
+                let cleanedBody = message.displayBody
+                Text(cleanedBody.isEmpty ? "(kein Textinhalt)" : cleanedBody)
                     .font(.callout)
                     .textSelection(.enabled)
                     .fixedSize(horizontal: false, vertical: true)

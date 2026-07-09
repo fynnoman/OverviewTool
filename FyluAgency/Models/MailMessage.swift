@@ -76,4 +76,11 @@ final class MailMessage {
         let source = preview.isEmpty ? bodyText : preview
         return MIMEBodyParser.sanitizeForPreview(source)
     }
+
+    /// Full body cleaned up for the reading pane. Preserves paragraphs,
+    /// drops MIME artefacts and hard-caps length so an oversized/malformed
+    /// mail can't blank out the detail view.
+    var displayBody: String {
+        MIMEBodyParser.sanitizeForDetail(bodyText)
+    }
 }

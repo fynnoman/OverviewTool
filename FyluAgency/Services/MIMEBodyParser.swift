@@ -30,6 +30,21 @@ enum MIMEBodyParser {
     /// multi-part message" preamble, or raw HTML. Idempotent: safe to run
     /// on an already-clean string.
     static func sanitizeForPreview(_ body: String) -> String {
+        sanitize(body, singleLine: true, maxLength: 4000)
+    }
+
+    /// Sanitize the full body for the reading pane. Same filters as the
+    /// preview path (drop MIME boundaries, orphan part headers, preamble
+    /// text, strip raw HTML) but preserves paragraph structure so the
+    /// mail actually reads like a mail. Hard-capped at 100k chars — beyond
+    /// that SwiftUI's `Text` in an unbounded ScrollView can hang the layout
+    /// engine and blank out the pane; the cap lets us fail visibly instead
+    /// of freezing.
+    static func sanitizeForDetail(_ body: String) -> String {
+        sanitize(body, singleLine: false, maxLength: 100_000)
+    }
+
+    private static func sanitize(_ body: String, singleLine: Bool, maxLength: Int) -> String {
         var t = sniffHTMLIfNeeded(body)
 
         // Drop the RFC 2049 preamble text some clients ship literally.
@@ -46,10 +61,10 @@ enum MIMEBodyParser {
 
         // Drop lines that look like a MIME boundary marker or an orphan
         // part header that leaked past the parser.
-        let cleaned = t.split(whereSeparator: { $0 == "\n" || $0 == "\r" })
-            .map { String($0).trimmingCharacters(in: .whitespaces) }
-            .filter { line in
-                if line.isEmpty { return false }
+        let kept = t.split(omittingEmptySubsequences: false, whereSeparator: { $0 == "\n" || $0 == "\r" })
+            .map { String($0) }
+            .filter { rawLine in
+                let line = rawLine.trimmingCharacters(in: .whitespaces)
                 // Boundaries always start with "--" and are ≥ 4 chars.
                 if line.hasPrefix("--"), line.count >= 4 { return false }
                 if line.range(
@@ -62,13 +77,26 @@ enum MIMEBodyParser {
                 ) != nil { return false }
                 return true
             }
-            .joined(separator: " ")
 
-        return cleaned.replacingOccurrences(
-            of: #"\s+"#,
-            with: " ",
-            options: .regularExpression
-        ).trimmingCharacters(in: .whitespaces)
+        let joined: String
+        if singleLine {
+            joined = kept
+                .map { $0.trimmingCharacters(in: .whitespaces) }
+                .filter { !$0.isEmpty }
+                .joined(separator: " ")
+                .replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
+        } else {
+            joined = kept.joined(separator: "\n")
+                // Collapse runs of ≥3 blank lines into a single blank line.
+                .replacingOccurrences(of: "\n{3,}", with: "\n\n", options: .regularExpression)
+        }
+
+        let trimmed = joined.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.count > maxLength {
+            let cap = trimmed.index(trimmed.startIndex, offsetBy: maxLength)
+            return String(trimmed[..<cap]) + "\n\n[… gekürzt: Mail zu groß fürs Lesefenster.]"
+        }
+        return trimmed
     }
 
     /// If `s` looks like HTML (doctype / `<html>` / `<body>` in the first
