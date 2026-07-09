@@ -45,6 +45,64 @@ enum MailProvider: String, Codable, CaseIterable, Identifiable {
             nil
         }
     }
+
+    /// Concrete step-by-step for the provider. Rendered as a numbered list
+    /// in the add-account sheet. Shipping this alongside `authHint` because
+    /// the free-text hint alone doesn't cut it — Google especially: users
+    /// see "Passkey" as their sign-in method and try to type that here,
+    /// which never works for IMAP.
+    var setupSteps: [String] {
+        switch self {
+        case .gmail:
+            return [
+                #"Google akzeptiert für IMAP keine Passkeys und keine normalen Passwörter — du brauchst ein separates App-Passwort."#,
+                #"Voraussetzung: 2-Faktor-Authentifizierung ist an. Falls nicht: myaccount.google.com → Sicherheit → 2-Schritt-Verifizierung aktivieren."#,
+                #"App-Passwort erstellen: myaccount.google.com/apppasswords → App-Name 'Fylu Agency' eintragen → 'Erstellen'."#,
+                #"Google zeigt dir dann 16 Zeichen in 4er-Gruppen (z. B. 'abcd efgh ijkl mnop'). Genau das kommt hier unten ins Passwort-Feld. Leerzeichen darfst du drin lassen oder rausnehmen."#,
+                #"Server und Port füllt Fylu automatisch aus (imap.gmail.com, 993, TLS)."#
+            ]
+        case .icloud:
+            return [
+                #"iCloud akzeptiert für IMAP nur App-spezifische Passwörter."#,
+                #"appleid.apple.com → Anmelden → Anmeldung & Sicherheit → App-spezifische Passwörter → Generieren."#,
+                #"Name z. B. 'Fylu Agency' vergeben, das erzeugte Passwort ins Feld unten kopieren."#,
+                #"Server und Port sind vorausgefüllt (imap.mail.me.com, 993)."#
+            ]
+        case .outlook:
+            return [
+                #"Bei Konten ohne 2FA reicht das normale Passwort."#,
+                #"Bei aktivem 2FA: account.microsoft.com/security → App-Kennwörter erstellen → hier eintragen."#,
+                #"Server und Port sind vorausgefüllt (outlook.office365.com, 993)."#
+            ]
+        case .yahoo:
+            return [
+                #"Yahoo verlangt ein App-Passwort, nicht dein Login-Passwort."#,
+                #"login.yahoo.com/account/security → App-Passwort erzeugen."#,
+                #"Passwort hier eintragen. Server/Port sind vorausgefüllt."#
+            ]
+        case .gmx, .webde:
+            return [
+                #"IMAP im Web-Postfach freischalten: Einstellungen → POP3/IMAP-Abruf → IMAP aktivieren."#,
+                #"Dann hier dein normales Postfach-Passwort eintragen. Server/Port sind vorausgefüllt."#
+            ]
+        case .custom:
+            return []
+        }
+    }
+
+    /// Optional deep link that opens exactly the page where the user creates
+    /// the credential. Shown as a "Anleitung öffnen"-button in the sheet.
+    var setupURL: URL? {
+        switch self {
+        case .gmail:   return URL(string: "https://myaccount.google.com/apppasswords")
+        case .icloud:  return URL(string: "https://appleid.apple.com/account/manage")
+        case .outlook: return URL(string: "https://account.microsoft.com/security")
+        case .yahoo:   return URL(string: "https://login.yahoo.com/account/security")
+        case .gmx:     return URL(string: "https://www.gmx.net/produkte/mail/imap-pop3/")
+        case .webde:   return URL(string: "https://hilfe.web.de/pop-imap/imap.html")
+        case .custom:  return nil
+        }
+    }
 }
 
 /// A connected mailbox. One row per (provider, address) pair. Password lives

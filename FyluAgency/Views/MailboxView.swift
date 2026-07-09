@@ -356,12 +356,30 @@ struct AddMailAccountView: View {
                         }
                     }
                     .onChange(of: provider) { _, _ in applyPreset() }
+                }
 
-                    if let hint = provider.authHint {
-                        Label(hint, systemImage: "info.circle")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
+                if !provider.setupSteps.isEmpty {
+                    Section("So verbindest du dein \(provider.title)-Konto") {
+                        ForEach(Array(provider.setupSteps.enumerated()), id: \.offset) { idx, step in
+                            HStack(alignment: .top, spacing: 10) {
+                                Text("\(idx + 1)")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundStyle(.white)
+                                    .frame(width: 20, height: 20)
+                                    .background(Color.accentColor)
+                                    .clipShape(Circle())
+                                Text(step)
+                                    .font(.callout)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                            .padding(.vertical, 2)
+                        }
+                        if let url = provider.setupURL {
+                            Link(destination: url) {
+                                Label("Anleitung im Browser öffnen", systemImage: "arrow.up.right.square")
+                            }
+                            .padding(.top, 4)
+                        }
                     }
                 }
 
