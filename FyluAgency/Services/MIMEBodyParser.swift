@@ -19,7 +19,66 @@ enum MIMEBodyParser {
     /// by `BODY[]`.
     static func extractPlainText(from raw: String) -> String {
         let (headers, body) = splitHeadersAndBody(raw)
-        return decodePart(headers: headers, body: body)
+        let extracted = decodePart(headers: headers, body: body)
+        // Some senders declare text/plain but ship HTML anyway — sniff so
+        // the doctype doesn't leak into the reading pane or preview.
+        return sniffHTMLIfNeeded(extracted)
+    }
+
+    /// Produce a preview-friendly snippet from a body that may still contain
+    /// MIME leftovers — boundary lines, orphan part headers, the "This is a
+    /// multi-part message" preamble, or raw HTML. Idempotent: safe to run
+    /// on an already-clean string.
+    static func sanitizeForPreview(_ body: String) -> String {
+        var t = sniffHTMLIfNeeded(body)
+
+        // Drop the RFC 2049 preamble text some clients ship literally.
+        t = t.replacingOccurrences(
+            of: #"This\s+is\s+a\s+multi-?part\s+message\s+in\s+MIME\s+format\.?"#,
+            with: "",
+            options: [.regularExpression, .caseInsensitive]
+        )
+        t = t.replacingOccurrences(
+            of: #"This\s+is\s+a\s+MIME[- ]encapsulated\s+message\.?"#,
+            with: "",
+            options: [.regularExpression, .caseInsensitive]
+        )
+
+        // Drop lines that look like a MIME boundary marker or an orphan
+        // part header that leaked past the parser.
+        let cleaned = t.split(whereSeparator: { $0 == "\n" || $0 == "\r" })
+            .map { String($0).trimmingCharacters(in: .whitespaces) }
+            .filter { line in
+                if line.isEmpty { return false }
+                // Boundaries always start with "--" and are ≥ 4 chars.
+                if line.hasPrefix("--"), line.count >= 4 { return false }
+                if line.range(
+                    of: #"^Content-(Type|Transfer-Encoding|Disposition|ID|Description|Location)\s*:"#,
+                    options: [.regularExpression, .caseInsensitive]
+                ) != nil { return false }
+                if line.range(
+                    of: #"^(MIME-Version|boundary\s*=)"#,
+                    options: [.regularExpression, .caseInsensitive]
+                ) != nil { return false }
+                return true
+            }
+            .joined(separator: " ")
+
+        return cleaned.replacingOccurrences(
+            of: #"\s+"#,
+            with: " ",
+            options: .regularExpression
+        ).trimmingCharacters(in: .whitespaces)
+    }
+
+    /// If `s` looks like HTML (doctype / `<html>` / `<body>` in the first
+    /// 200 chars), run it through the tag stripper. Otherwise return as-is.
+    private static func sniffHTMLIfNeeded(_ s: String) -> String {
+        let head = s.trimmingCharacters(in: .whitespacesAndNewlines).prefix(200).lowercased()
+        if head.contains("<!doctype html") || head.contains("<html") || head.contains("<body") {
+            return stripHTML(s)
+        }
+        return s
     }
 
     // MARK: - Recursive part decoding

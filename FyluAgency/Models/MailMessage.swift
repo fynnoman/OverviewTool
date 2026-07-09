@@ -61,6 +61,19 @@ final class MailMessage {
 
     /// Human-readable sender for list rows.
     var senderDisplay: String {
-        fromName.isEmpty ? fromAddress : fromName
+        let name = fromName.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !name.isEmpty { return name }
+        let addr = fromAddress.trimmingCharacters(in: .whitespacesAndNewlines)
+        // ENVELOPE with both mailbox and host NIL gives us a bare "@".
+        if !addr.isEmpty, addr != "@" { return addr }
+        return "(Absender unbekannt)"
+    }
+
+    /// Preview text as shown in the list. Re-runs the MIME preview sanitiser
+    /// on read so legacy rows whose `preview` was persisted before the
+    /// sanitiser existed also render cleanly.
+    var displayPreview: String {
+        let source = preview.isEmpty ? bodyText : preview
+        return MIMEBodyParser.sanitizeForPreview(source)
     }
 }

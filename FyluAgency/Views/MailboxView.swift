@@ -238,19 +238,23 @@ private struct MailListRow: View {
                 .padding(.top, 6)
 
             VStack(alignment: .leading, spacing: 3) {
-                HStack {
+                HStack(spacing: 6) {
                     Text(message.senderDisplay)
                         .font(.system(size: 13, weight: message.isSeen ? .regular : .semibold))
                         .lineLimit(1)
-                    Spacer()
+                        .truncationMode(.tail)
+                    Spacer(minLength: 4)
                     Text(DateFmt.short(message.date))
                         .font(.caption2).foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .fixedSize(horizontal: true, vertical: false)
+                        .layoutPriority(1)
                 }
                 Text(message.subject.isEmpty ? "(ohne Betreff)" : message.subject)
                     .font(.system(size: 12, weight: message.isSeen ? .regular : .medium))
                     .foregroundStyle(message.isSeen ? .secondary : .primary)
                     .lineLimit(1)
-                Text(message.preview)
+                Text(message.displayPreview)
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
@@ -289,9 +293,12 @@ struct MailMessageDetailView: View {
                                 .font(.caption2).foregroundStyle(.tertiary)
                         }
                     }
-                    Spacer()
+                    Spacer(minLength: 4)
                     Text(DateFmt.short(message.date))
                         .font(.caption).foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .fixedSize(horizontal: true, vertical: false)
+                        .layoutPriority(1)
                 }
                 .padding(10)
                 .background(Color.gray.opacity(0.05))

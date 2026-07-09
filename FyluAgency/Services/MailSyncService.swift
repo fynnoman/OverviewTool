@@ -82,10 +82,9 @@ final class MailSyncService {
             )
             if (try? modelContext.fetch(existing))?.first != nil { continue }
 
-            let preview = String(m.bodyText.prefix(500))
-                .replacingOccurrences(of: "\n", with: " ")
-                .replacingOccurrences(of: "\r", with: " ")
-                .trimmingCharacters(in: .whitespacesAndNewlines)
+            let preview = String(
+                MIMEBodyParser.sanitizeForPreview(m.bodyText).prefix(500)
+            )
 
             let msg = MailMessage(
                 remoteUID: m.uid,

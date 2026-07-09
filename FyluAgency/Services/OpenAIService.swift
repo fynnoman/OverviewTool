@@ -113,6 +113,81 @@ struct DraftedReply: Codable {
     var body: String
 }
 
+/// One follow-up action the model suggests after reading a lead's notes and
+/// emails. `leadId` is the UUID of the source lead so the sheet can jump
+/// straight to the lead detail on tap.
+struct LeadActionSuggestion: Codable, Identifiable {
+    enum Kind: String, Codable {
+        case call, email, meeting, other
+    }
+    enum Priority: String, Codable {
+        case high, medium, low
+    }
+
+    var leadId: String
+    var leadName: String
+    var kind: Kind
+    var title: String
+    var reason: String
+    /// ISO 8601 date if the model spotted a concrete upcoming date/time in
+    /// the notes/emails; `nil` otherwise.
+    var dueDate: String?
+    var priority: Priority
+
+    var id: String { leadId + "|" + title }
+}
+
+/// Prompt-ready snapshot of one lead. The `LeadsListView` builds these from
+/// SwiftData just before the API call so we don't send full DB objects and
+/// can trim large email bodies without touching the persistent store.
+struct LeadAIInput {
+    struct EmailSnapshot {
+        var direction: String   // "sent" | "received"
+        var subject: String
+        var summary: String     // may be empty
+        var body: String        // may be truncated
+        var sentAt: Date?
+    }
+
+    var id: String
+    var name: String
+    var company: String
+    var status: String
+    var offerDescription: String
+    var expectedValue: Double?
+    var lastContactAt: Date?
+    var notes: String
+    var emails: [EmailSnapshot]
+
+    /// Compact textual form for the model. Chronological emails, summary
+    /// preferred over body to keep tokens low.
+    var serializedForPrompt: String {
+        var out = "leadId: \(id)\n"
+        out += "name: \(name)\n"
+        if !company.isEmpty { out += "company: \(company)\n" }
+        out += "status: \(status)\n"
+        if !offerDescription.isEmpty { out += "offer: \(offerDescription)\n" }
+        if let v = expectedValue { out += "expectedValue: \(String(format: "%.0f", v)) EUR\n" }
+        let df = DateFormatter()
+        df.locale = Locale(identifier: "de_DE")
+        df.dateFormat = "yyyy-MM-dd"
+        if let d = lastContactAt { out += "lastContactAt: \(df.string(from: d))\n" }
+        if !notes.isEmpty { out += "notes:\n\(notes.prefix(1500))\n" }
+        if !emails.isEmpty {
+            out += "emails (chronologisch, älteste zuerst):\n"
+            for e in emails {
+                let when = e.sentAt.map { df.string(from: $0) } ?? "?"
+                let content = e.summary.isEmpty ? e.body : e.summary
+                out += "- [\(when)] \(e.direction) · \(e.subject)\n"
+                if !content.isEmpty {
+                    out += "  \(content.replacingOccurrences(of: "\n", with: " ").prefix(800))\n"
+                }
+            }
+        }
+        return out
+    }
+}
+
 /// Thin client against OpenAI's Responses API. We deliberately keep
 /// requests synchronous + structured (JSON schema) so callers don't
 /// have to parse free-form text. The active workspace decides which
@@ -511,6 +586,93 @@ struct OpenAIService {
     }
 
     /// Quick health check used by the Settings view to validate a key.
+    /// Read every lead's notes + emails + metadata in one call and return a
+    /// prioritized list of concrete follow-up actions (call X again, chase
+    /// the proposal, prepare for the meeting on … ). The caller is
+    /// responsible for shaping `leads` — trim large bodies, prefer email
+    /// summaries where available.
+    func analyzeLeadsForActions(_ leads: [LeadAIInput]) async throws -> [LeadActionSuggestion] {
+        let system = """
+        Du bist ein Sales-Follow-up-Assistent für eine kleine Webdesign-/Marketing-Agentur. \
+        Du bekommst mehrere Leads mit Notizen, E-Mail-Verlauf und Metadaten. Deine Aufgabe: \
+        pro Lead 0–3 konkrete, priorisierte Handlungsempfehlungen ableiten, die dem User \
+        heute wirklich weiterhelfen.
+
+        Achte besonders auf:
+        - Offene Angebote ohne Reaktion (Status "Angebot raus" + kein Kontakt seit >7 Tagen \
+          → hohe Priorität: nachhaken).
+        - Explizite Zusagen wie "melde mich Freitag" ohne bisherige Rückmeldung.
+        - Konkrete Datumsangaben in Notizen oder E-Mails (Termine, Deadlines, Rückrufe) — \
+          diese kommen als eigene Aktion mit `dueDate` im Feld raus, damit der User sich \
+          vorbereiten kann.
+        - Leads im Status "Neu" ohne Erstkontakt (klare Erstansprache empfehlen).
+
+        Regeln:
+        - Antworte ausschließlich mit dem JSON-Schema.
+        - `leadId` UND `leadName` MÜSSEN dem Input entsprechen. Erfinde keine Leads.
+        - `kind`: "call" für Anrufe, "email" für Nachfassmails/Erstansprachen, \
+          "meeting" für vereinbarte oder anstehende Termine, "other" nur wenn wirklich \
+          nichts davon passt.
+        - `title`: knappe, sprechende Aktion in der Du-Form ("Ruf Anna Weber nochmal an", \
+          "Schreib GmbH XY wegen Angebot", "Termin mit Meier am 15.07. vorbereiten").
+        - `reason`: 1 Satz, warum jetzt — bezieht sich konkret auf das, was in den Daten \
+          steht (Datum, Tag, letzter Kontakt, offene Frage).
+        - `dueDate`: ISO 8601 (YYYY-MM-DD oder YYYY-MM-DDTHH:mm) NUR wenn im Input ein \
+          echtes Datum steht. Sonst null. Vage Angaben ("bald", "nächste Woche") → null.
+        - `priority`: "high" für heute/überfällig/verbindlich zugesagt, \
+          "medium" für offene Angebote / laufender Kontakt, \
+          "low" für Nice-to-have.
+        - Wenn ein Lead absolut keine Aktion braucht (frisch gewonnen, klar verloren, \
+          alles am Laufen), gib nichts für diesen Lead zurück — die Liste kann kürzer sein \
+          als die Anzahl der Leads.
+        - Insgesamt maximal 40 Aktionen zurückgeben.
+        """
+
+        let schema: [String: Any] = [
+            "type": "object",
+            "additionalProperties": false,
+            "properties": [
+                "actions": [
+                    "type": "array",
+                    "items": [
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": [
+                            "leadId":   ["type": "string"],
+                            "leadName": ["type": "string"],
+                            "kind":     ["type": "string", "enum": ["call", "email", "meeting", "other"]],
+                            "title":    ["type": "string"],
+                            "reason":   ["type": "string"],
+                            "dueDate":  ["type": ["string", "null"]],
+                            "priority": ["type": "string", "enum": ["high", "medium", "low"]]
+                        ],
+                        "required": ["leadId", "leadName", "kind", "title", "reason", "dueDate", "priority"]
+                    ]
+                ]
+            ],
+            "required": ["actions"]
+        ]
+
+        let today = ISO8601DateFormatter().string(from: Date()).prefix(10)
+        let userText = """
+        Heutiges Datum: \(today)
+
+        Leads:
+        \(leads.map(\.serializedForPrompt).joined(separator: "\n\n---\n\n"))
+        """
+
+        struct R: Codable { let actions: [LeadActionSuggestion] }
+        let r: R = try await callJSON(
+            schemaName: "lead_actions",
+            schema: schema,
+            messages: [
+                ["role": "system", "content": system],
+                ["role": "user", "content": userText]
+            ]
+        )
+        return r.actions
+    }
+
     func ping() async -> Bool {
         struct R: Codable { let ok: Bool }
         let schema: [String: Any] = [

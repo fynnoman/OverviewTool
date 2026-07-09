@@ -6,6 +6,7 @@ struct LeadsListView: View {
     let workspace: Workspace
     @Environment(\.modelContext) private var modelContext
     @State private var showNewLead = false
+    @State private var showInsights = false
     @State private var selectedLead: Lead?
 
     private var openLeads: [Lead] {
@@ -38,6 +39,13 @@ struct LeadsListView: View {
                             .font(.callout).foregroundStyle(.secondary)
                     }
                     Spacer()
+                    Button {
+                        showInsights = true
+                    } label: {
+                        Label("KI-Analyse", systemImage: "sparkles")
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(workspace.leads.isEmpty)
                     Button {
                         showNewLead = true
                     } label: {
@@ -105,6 +113,11 @@ struct LeadsListView: View {
         .sheet(isPresented: $showNewLead) {
             NewLeadSheet(workspace: workspace) { newLead in
                 selectedLead = newLead
+            }
+        }
+        .sheet(isPresented: $showInsights) {
+            LeadsInsightsSheet(workspace: workspace) { lead in
+                selectedLead = lead
             }
         }
     }
