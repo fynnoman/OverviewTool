@@ -231,36 +231,39 @@ private struct MailListRow: View {
     let message: MailMessage
 
     var body: some View {
-        HStack(alignment: .top, spacing: 8) {
+        VStack(alignment: .leading, spacing: 3) {
+            HStack(spacing: 6) {
+                Text(message.senderDisplay)
+                    .font(.system(size: 13, weight: message.isSeen ? .regular : .semibold))
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                Spacer(minLength: 4)
+                Text(DateFmt.short(message.date))
+                    .font(.caption2).foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
+                    .layoutPriority(1)
+            }
+            Text(message.subject.isEmpty ? "(ohne Betreff)" : message.subject)
+                .font(.system(size: 12, weight: message.isSeen ? .regular : .medium))
+                .foregroundStyle(message.isSeen ? .secondary : .primary)
+                .lineLimit(1)
+            Text(message.displayPreview)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .lineLimit(2)
+        }
+        .padding(.vertical, 4)
+        .padding(.leading, 14)
+        .overlay(alignment: .topLeading) {
+            // Unread indicator as overlay so all three text rows start at the
+            // same leading edge instead of getting shoved right by the dot.
             Circle()
                 .fill(message.isSeen ? Color.clear : Color.accentColor)
                 .frame(width: 8, height: 8)
-                .padding(.top, 6)
-
-            VStack(alignment: .leading, spacing: 3) {
-                HStack(spacing: 6) {
-                    Text(message.senderDisplay)
-                        .font(.system(size: 13, weight: message.isSeen ? .regular : .semibold))
-                        .lineLimit(1)
-                        .truncationMode(.tail)
-                    Spacer(minLength: 4)
-                    Text(DateFmt.short(message.date))
-                        .font(.caption2).foregroundStyle(.secondary)
-                        .lineLimit(1)
-                        .fixedSize(horizontal: true, vertical: false)
-                        .layoutPriority(1)
-                }
-                Text(message.subject.isEmpty ? "(ohne Betreff)" : message.subject)
-                    .font(.system(size: 12, weight: message.isSeen ? .regular : .medium))
-                    .foregroundStyle(message.isSeen ? .secondary : .primary)
-                    .lineLimit(1)
-                Text(message.displayPreview)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2)
-            }
+                .padding(.top, 8)
+                .padding(.leading, 2)
         }
-        .padding(.vertical, 4)
     }
 }
 

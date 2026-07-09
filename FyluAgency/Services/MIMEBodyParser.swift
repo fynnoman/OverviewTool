@@ -45,7 +45,13 @@ enum MIMEBodyParser {
     }
 
     private static func sanitize(_ body: String, singleLine: Bool, maxLength: Int) -> String {
-        var t = sniffHTMLIfNeeded(body)
+        // Some IMAP servers hand us the whole multipart body verbatim
+        // (missing/mis-typed top-level Content-Type). If we can spot the
+        // "Content-Type: text/plain" header inside the body, pull that
+        // part out first — this is what turns a screen full of MIME
+        // scaffolding into an actual readable mail.
+        var t = extractInlinedPlainText(from: body) ?? body
+        t = sniffHTMLIfNeeded(t)
 
         // Drop the RFC 2049 preamble text some clients ship literally.
         t = t.replacingOccurrences(
@@ -65,8 +71,7 @@ enum MIMEBodyParser {
             .map { String($0) }
             .filter { rawLine in
                 let line = rawLine.trimmingCharacters(in: .whitespaces)
-                // Boundaries always start with "--" and are ≥ 4 chars.
-                if line.hasPrefix("--"), line.count >= 4 { return false }
+                if looksLikeMIMEBoundary(line) { return false }
                 if line.range(
                     of: #"^Content-(Type|Transfer-Encoding|Disposition|ID|Description|Location)\s*:"#,
                     options: [.regularExpression, .caseInsensitive]
@@ -99,14 +104,73 @@ enum MIMEBodyParser {
         return trimmed
     }
 
-    /// If `s` looks like HTML (doctype / `<html>` / `<body>` in the first
-    /// 200 chars), run it through the tag stripper. Otherwise return as-is.
+    /// If `s` looks like HTML anywhere in its content (not just the first
+    /// 200 chars), run it through the tag stripper. Handles the case where
+    /// the plain-text part is short and the HTML part sits below it.
     private static func sniffHTMLIfNeeded(_ s: String) -> String {
-        let head = s.trimmingCharacters(in: .whitespacesAndNewlines).prefix(200).lowercased()
-        if head.contains("<!doctype html") || head.contains("<html") || head.contains("<body") {
+        let sample = s.prefix(4000).lowercased()
+        if sample.contains("<!doctype html")
+            || sample.contains("<html")
+            || sample.contains("<body")
+            || sample.contains("<div ")
+            || sample.contains("<table ")
+        {
             return stripHTML(s)
         }
         return s
+    }
+
+    /// Heuristic MIME boundary detection. Standard boundaries are `--<token>`
+    /// but we've seen mails leak lines like `-=-yu9+AfHGLz==` (missing dash,
+    /// stripped by an intermediate MTA). Any single-word line starting with
+    /// `-` that contains typical boundary characters (`=`, `_`, `+`) and no
+    /// whitespace is almost certainly a boundary — treating it as such is
+    /// safer than showing it as content.
+    private static func looksLikeMIMEBoundary(_ line: String) -> Bool {
+        if line.hasPrefix("--"), line.count >= 4 { return true }
+        guard line.count >= 6, line.hasPrefix("-") else { return false }
+        if line.rangeOfCharacter(from: .whitespaces) != nil { return false }
+        if line.contains("=") || line.contains("_") || line.contains("+") { return true }
+        return false
+    }
+
+    /// When the top-level MIME parse didn't succeed and we end up with the
+    /// raw multipart source in the "body", try to pluck out just the
+    /// text/plain part so the reader isn't stuck with headers + boundaries.
+    ///
+    /// Strategy: find the first `Content-Type: text/plain` header, skip to
+    /// its blank-line separator, and return everything up to the next
+    /// boundary line or the next Content-Type header.
+    private static func extractInlinedPlainText(from body: String) -> String? {
+        guard let ctRange = body.range(
+            of: #"Content-Type\s*:\s*text/plain[^\n\r]*"#,
+            options: [.regularExpression, .caseInsensitive]
+        ) else { return nil }
+
+        // The header may be followed by other part-headers (Content-Transfer-
+        // Encoding, Content-Disposition, …). Skip until the first blank line,
+        // which marks the start of the body.
+        let afterHeader = body[ctRange.upperBound...]
+        let blankLineRange = afterHeader.range(of: "\r\n\r\n")
+            ?? afterHeader.range(of: "\n\n")
+        guard let blankLine = blankLineRange else { return nil }
+        let contentStart = blankLine.upperBound
+
+        // Cut off at the next MIME-ish separator. Accept both real boundary
+        // lines (`--foo`) and the mangled variants (`-=-foo`), or any new
+        // `Content-Type:` header that marks the next part.
+        let content = afterHeader[contentStart...]
+        let terminator = content.range(
+            of: #"\r?\n(-{1,}[^\s]+|Content-Type\s*:)"#,
+            options: [.regularExpression, .caseInsensitive]
+        )
+        let end = terminator?.lowerBound ?? content.endIndex
+        let extracted = String(content[..<end])
+        let trimmed = extracted.trimmingCharacters(in: .whitespacesAndNewlines)
+        // Only trust the extraction if it produced meaningful content —
+        // very short results probably mean the parser tripped on a weird
+        // header layout and we'd lose more than we gain.
+        return trimmed.count >= 40 ? trimmed : nil
     }
 
     // MARK: - Recursive part decoding
