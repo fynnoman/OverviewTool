@@ -15,6 +15,11 @@ struct MailboxView: View {
     @State private var showAddAccount = false
     @State private var isSyncing = false
     @State private var syncError: String?
+    // Default: sidebar ausgeblendet — der Postfach-Wechsler wird über den
+    // Sidebar-Toggle in der Toolbar wieder eingeklappt, ohne dass man am
+    // Divider ziehen muss (Ziehen konnte man die Sidebar bisher zu weit
+    // nach links schieben und nicht mehr zurückholen).
+    @State private var columnVisibility: NavigationSplitViewVisibility = .doubleColumn
 
     init(workspace: Workspace) {
         self.workspace = workspace
@@ -38,7 +43,7 @@ struct MailboxView: View {
     }
 
     var body: some View {
-        NavigationSplitView {
+        NavigationSplitView(columnVisibility: $columnVisibility) {
             accountList
                 .navigationSplitViewColumnWidth(min: 220, ideal: 240, max: 300)
         } content: {
@@ -56,6 +61,16 @@ struct MailboxView: View {
             }
         }
         .toolbar {
+            ToolbarItem(placement: .navigation) {
+                Button {
+                    withAnimation {
+                        columnVisibility = columnVisibility == .all ? .doubleColumn : .all
+                    }
+                } label: {
+                    Label("Postfächer", systemImage: "sidebar.left")
+                }
+                .help("Postfach-Liste ein-/ausblenden")
+            }
             ToolbarItemGroup(placement: .primaryAction) {
                 Button {
                     Task { await syncAll() }
@@ -87,9 +102,11 @@ struct MailboxView: View {
             Text(syncError ?? "")
         }
         .task {
-            // Beim ersten Öffnen einmal automatisch aktualisieren, wenn
-            // es Accounts gibt und noch nie synchronisiert wurde.
-            if !accounts.isEmpty, messages.isEmpty, !isSyncing {
+            // Bei jedem Öffnen der Ansicht neu synchronisieren, damit neue
+            // Mails auftauchen. Vorher gab's die Bedingung "nur wenn leer" —
+            // dadurch kamen neue Nachrichten nach dem ersten Sync nie
+            // automatisch rein.
+            if !accounts.isEmpty, !isSyncing {
                 await syncAll()
             }
         }

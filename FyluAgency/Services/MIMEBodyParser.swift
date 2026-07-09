@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(AppKit)
+import AppKit
+#endif
 
 /// Extracts a clean plain-text body from a raw RFC822 message (as returned by
 /// IMAP `BODY[]`). Handles the three things that ruined our v1 rendering:
@@ -365,10 +368,32 @@ enum MIMEBodyParser {
 
     // MARK: - HTML fallback
 
-    /// Strip HTML down to something legible for the reading pane. Not a full
-    /// renderer — we drop scripts/styles, collapse tags, translate a handful
-    /// of common entities.
+    /// Strip HTML down to something legible for the reading pane.
+    ///
+    /// Prefer AppKit's `NSAttributedString(html:...)` importer when available
+    /// on macOS — it handles the messy real-world stuff (entities, tables,
+    /// embedded CSS, mangled tags) far better than a hand-rolled regex pass.
+    /// Falls back to the regex path if the importer refuses the input.
     private static func stripHTML(_ s: String) -> String {
+        #if canImport(AppKit)
+        if let data = s.data(using: .utf8) {
+            let opts: [NSAttributedString.DocumentReadingOptionKey: Any] = [
+                .documentType: NSAttributedString.DocumentType.html,
+                .characterEncoding: String.Encoding.utf8.rawValue
+            ]
+            if let attributed = try? NSAttributedString(data: data, options: opts, documentAttributes: nil) {
+                let plain = attributed.string
+                    .replacingOccurrences(of: "\u{00A0}", with: " ")  // NBSP → regular space
+                    .replacingOccurrences(of: "\n{3,}", with: "\n\n", options: .regularExpression)
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                if !plain.isEmpty { return plain }
+            }
+        }
+        #endif
+        return stripHTMLRegex(s)
+    }
+
+    private static func stripHTMLRegex(_ s: String) -> String {
         var t = s
         // Kill script/style blocks entirely before touching anything else.
         t = t.replacingOccurrences(
