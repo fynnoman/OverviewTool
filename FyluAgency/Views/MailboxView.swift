@@ -211,11 +211,14 @@ private struct AccountRow: View {
     let unreadCount: Int
     let onDelete: () -> Void
 
+    @State private var showErrorDetails = false
+
     var body: some View {
-        HStack {
+        HStack(alignment: .top) {
             Image(systemName: account.provider.symbolName)
                 .foregroundStyle(.secondary)
-            VStack(alignment: .leading, spacing: 1) {
+                .padding(.top, 2)
+            VStack(alignment: .leading, spacing: 2) {
                 Text(account.displayName)
                     .font(.system(size: 13, weight: .medium))
                     .lineLimit(1)
@@ -223,10 +226,24 @@ private struct AccountRow: View {
                     .font(.caption2).foregroundStyle(.secondary)
                     .lineLimit(1)
                 if let err = account.lastSyncError, !err.isEmpty {
-                    Label("Fehler", systemImage: "exclamationmark.triangle.fill")
-                        .font(.caption2)
-                        .foregroundStyle(.orange)
-                        .lineLimit(1)
+                    Button {
+                        showErrorDetails = true
+                    } label: {
+                        HStack(alignment: .top, spacing: 4) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundStyle(.orange)
+                                .font(.caption2)
+                                .padding(.top, 1)
+                            Text(err)
+                                .font(.caption2)
+                                .foregroundStyle(.orange)
+                                .lineLimit(3)
+                                .multilineTextAlignment(.leading)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .help("Klick für Details und Lösungsvorschläge")
                 }
             }
             Spacer()
@@ -241,6 +258,126 @@ private struct AccountRow: View {
         .contextMenu {
             Button("Postfach entfernen", role: .destructive, action: onDelete)
         }
+        .sheet(isPresented: $showErrorDetails) {
+            SyncErrorSheet(account: account)
+        }
+    }
+}
+
+/// Full-screen error sheet with the raw server response and provider-specific
+/// hints. Users can copy the message and jump straight to the provider's
+/// setup docs.
+private struct SyncErrorSheet: View {
+    let account: MailAccount
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Label("Sync fehlgeschlagen", systemImage: "exclamationmark.triangle.fill")
+                    .foregroundStyle(.orange)
+                    .font(.headline)
+                Spacer()
+                Button { dismiss() } label: { Image(systemName: "xmark") }
+                    .buttonStyle(.plain)
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Postfach")
+                    .font(.caption).foregroundStyle(.secondary)
+                Text("\(account.displayName) — \(account.emailAddress)")
+                    .font(.callout)
+            }
+
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Text("Fehlermeldung vom Server")
+                        .font(.caption).foregroundStyle(.secondary)
+                    Spacer()
+                    Button("Kopieren") {
+                        let pb = NSPasteboard.general
+                        pb.clearContents()
+                        pb.setString(account.lastSyncError ?? "", forType: .string)
+                    }
+                    .buttonStyle(.link)
+                    .font(.caption)
+                }
+                ScrollView {
+                    Text(account.lastSyncError ?? "")
+                        .font(.system(.callout, design: .monospaced))
+                        .textSelection(.enabled)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(10)
+                        .background(Color.gray.opacity(0.08))
+                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                }
+                .frame(maxHeight: 140)
+            }
+
+            if !troubleshooting.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Was wahrscheinlich hilft")
+                        .font(.caption).foregroundStyle(.secondary)
+                    ForEach(Array(troubleshooting.enumerated()), id: \.offset) { _, tip in
+                        HStack(alignment: .top, spacing: 8) {
+                            Text("•").foregroundStyle(.secondary)
+                            Text(tip)
+                                .font(.callout)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                }
+            }
+
+            if let url = account.provider.setupURL {
+                Link(destination: url) {
+                    Label("Provider-Anleitung öffnen", systemImage: "arrow.up.right.square")
+                }
+            }
+
+            Spacer(minLength: 0)
+            HStack {
+                Spacer()
+                Button("Schließen") { dismiss() }
+                    .keyboardShortcut(.defaultAction)
+            }
+        }
+        .padding(20)
+        .frame(minWidth: 480, minHeight: 420)
+    }
+
+    /// Turn the raw server error into 2-3 actionable hints. We deliberately
+    /// bias toward Gmail's most common failure modes because that's what
+    /// bites users the hardest (App-Passwörter statt Passkey).
+    private var troubleshooting: [String] {
+        let err = (account.lastSyncError ?? "").lowercased()
+        var tips: [String] = []
+        let isGmail = account.provider == .gmail
+
+        if err.contains("authentication") || err.contains("credentials")
+            || err.contains("invalid") || err.contains("login")
+            || err.contains("bad") || err.contains("auth") {
+            if isGmail {
+                tips.append("Gmail nimmt für IMAP nur ein App-Passwort, nicht dein Login-Passwort und keinen Passkey. Erstellen unter myaccount.google.com/apppasswords (2FA muss aktiv sein).")
+                tips.append("Das App-Passwort ist 16 Zeichen in 4er-Gruppen. Ohne Leerzeichen eingeben oder Leerzeichen sind egal, aber der Rest muss exakt stimmen.")
+                tips.append("Prüf im Gmail-Web-Postfach: Einstellungen → Weiterleitung und POP/IMAP → IMAP aktivieren.")
+            } else {
+                tips.append("Passwort prüfen. Bei aktivem 2FA brauchst du in der Regel ein App-spezifisches Passwort.")
+            }
+        }
+        if err.contains("timeout") || err.contains("timed out") {
+            tips.append("Server antwortet nicht rechtzeitig. Netzwerk prüfen, ggf. VPN/Firewall temporär deaktivieren.")
+        }
+        if err.contains("connection") || err.contains("refused") || err.contains("network") {
+            tips.append("Verbindung zum Server bricht ab. Port 993 (IMAPS) muss erreichbar sein.")
+        }
+        if err.contains("select") || err.contains("inbox") {
+            tips.append("Der Server akzeptiert die Anmeldung, aber INBOX ist nicht zugreifbar. In Gmail: 'Alle Nachrichten' aktivieren oder IMAP-Ordner sichtbar machen.")
+        }
+        if tips.isEmpty && isGmail {
+            tips.append("Häufigster Gmail-Fehler: App-Passwort fehlt. myaccount.google.com/apppasswords → 'Fylu Agency' → generieren → hier eintragen.")
+        }
+        return tips
     }
 }
 
