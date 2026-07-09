@@ -32,6 +32,8 @@
 		55CE34277DACE1546DBE9D8E /* OpenAIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CCCF567118988AC1F186C10 /* OpenAIService.swift */; };
 		5DBCC9B7B41B63463D1D267D /* LeadsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CB08591EFAFA4CBA1BB7143 /* LeadsListView.swift */; };
 		1D40B708256D4C9EB1F3301F /* LeadsInsightsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93407E4377D44C9398DDF65D /* LeadsInsightsSheet.swift */; };
+		050017405E9941C2A83F18EA /* UpdateChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 996B35DEFD4A410DB03B0E43 /* UpdateChecker.swift */; };
+		FDDBE897D48F4DABA703EBBB /* UpdateBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A69573959AD4D679C5BA5C2 /* UpdateBanner.swift */; };
 		5FAE40EE6925839040C4EF46 /* Customer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86B246E0F2A23B4E9C0CBDDB /* Customer.swift */; };
 		601ED83746D0E8DB27E7BD3A /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DF13C78A3B41A66F227380D /* ContentView.swift */; };
 		6D03EC4C0FE7B8CDAB165159 /* MailSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F27385715420800903E7078 /* MailSyncService.swift */; };
@@ -89,6 +91,8 @@
 		7C3025FCEBD8FB3E978EE512 /* AppointmentsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppointmentsListView.swift; sourceTree = "<group>"; };
 		7CB08591EFAFA4CBA1BB7143 /* LeadsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeadsListView.swift; sourceTree = "<group>"; };
 		93407E4377D44C9398DDF65D /* LeadsInsightsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeadsInsightsSheet.swift; sourceTree = "<group>"; };
+		996B35DEFD4A410DB03B0E43 /* UpdateChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateChecker.swift; sourceTree = "<group>"; };
+		0A69573959AD4D679C5BA5C2 /* UpdateBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateBanner.swift; sourceTree = "<group>"; };
 		7CF92F3CF61AC8974707FE06 /* FyluAgency.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FyluAgency.entitlements; sourceTree = "<group>"; };
 		7F8B7839A54BD4DC309290E9 /* IMAPClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IMAPClient.swift; sourceTree = "<group>"; };
 		828128D74A08D6453E4CC493 /* UploadedInvoice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UploadedInvoice.swift; sourceTree = "<group>"; };
@@ -184,6 +188,7 @@
 				1DB392CC85E6C9A2B183876A /* InvoicesListView.swift */,
 				7CB08591EFAFA4CBA1BB7143 /* LeadsListView.swift */,
 				93407E4377D44C9398DDF65D /* LeadsInsightsSheet.swift */,
+				0A69573959AD4D679C5BA5C2 /* UpdateBanner.swift */,
 				AFD14DFBC4CD7D3435286810 /* MailboxView.swift */,
 				1A94652B86FAB2A4AD934317 /* QuoteDetailView.swift */,
 				23AA3324E7EDEFACA2D919E9 /* QuotesListView.swift */,
@@ -207,6 +212,7 @@
 				61C009676DE649DE7BF8D049 /* MIMEBodyParser.swift */,
 				EACA4944494BB313C484CD05 /* OCRService.swift */,
 				3CCCF567118988AC1F186C10 /* OpenAIService.swift */,
+				996B35DEFD4A410DB03B0E43 /* UpdateChecker.swift */,
 				F098F5875B3C62D2B44E2890 /* PDFRenderer.swift */,
 				D85B2626257B985AE0E33610 /* SoundPlayer.swift */,
 			);
@@ -337,6 +343,8 @@
 				070D1ADDF6FC2154CD79D5CD /* LeadEmail.swift in Sources */,
 				5DBCC9B7B41B63463D1D267D /* LeadsListView.swift in Sources */,
 				1D40B708256D4C9EB1F3301F /* LeadsInsightsSheet.swift in Sources */,
+				050017405E9941C2A83F18EA /* UpdateChecker.swift in Sources */,
+				FDDBE897D48F4DABA703EBBB /* UpdateBanner.swift in Sources */,
 				BEEBFE9107A1C7785169A8D5 /* MIMEBodyParser.swift in Sources */,
 				8E9023FD49B7EFC355124F04 /* MailAccount.swift in Sources */,
 				4F4727D88DE984C4404EA741 /* MailKeychainService.swift in Sources */,
@@ -418,7 +426,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.0.1;
+				MARKETING_VERSION = 1.0.2;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -488,7 +496,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.0.1;
+				MARKETING_VERSION = 1.0.2;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;

@@ -1,0 +1,69 @@
+name: Build & Release
+
+# Runs whenever a version tag is pushed. Builds the Release configuration
+# on a GitHub-hosted macOS runner, zips the .app and attaches it to the
+# matching GitHub Release. Free unlimited minutes on public repos.
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write  # needed for `gh release create`
+
+jobs:
+  build-and-release:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Extract version from tag
+        id: version
+        run: echo "value=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Build Release
+        run: |
+          xcodebuild \
+            -project FyluAgency.xcodeproj \
+            -scheme FyluAgency \
+            -configuration Release \
+            -destination 'platform=macOS' \
+            CONFIGURATION_BUILD_DIR="$PWD/build" \
+            CODE_SIGN_IDENTITY="-" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+
+      - name: Package .app as zip
+        run: |
+          cd build
+          ditto -c -k --sequesterRsrc --keepParent \
+            FyluAgency.app \
+            "FyluAgency-${{ steps.version.outputs.value }}.zip"
+          ls -lh *.zip
+
+      - name: Create or update GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${{ steps.version.outputs.value }}"
+          ZIP_PATH="build/FyluAgency-${VERSION}.zip"
+
+          # If the release doesn't exist yet, create it. If it does
+          # (e.g. pre-created manually), upload the asset in-place.
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$ZIP_PATH" --clobber
+          else
+            gh release create "$TAG" "$ZIP_PATH" \
+              --title "Fylu Agency ${VERSION}" \
+              --generate-notes
+          fi

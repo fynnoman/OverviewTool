@@ -4,6 +4,7 @@ import SwiftData
 @main
 struct FyluAgencyApp: App {
     @State private var appState = AppState()
+    @State private var updateChecker = UpdateChecker()
 
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
@@ -40,12 +41,22 @@ struct FyluAgencyApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
-                .environment(appState)
-                .frame(minWidth: 1100, minHeight: 700)
-                .task {
-                    await appState.bootstrap(context: sharedModelContainer.mainContext)
+            VStack(spacing: 0) {
+                if let release = updateChecker.availableRelease {
+                    UpdateBanner(
+                        release: release,
+                        onOpen: { NSWorkspace.shared.open(release.htmlURL) },
+                        onDismiss: { updateChecker.dismiss() }
+                    )
                 }
+                ContentView()
+                    .environment(appState)
+                    .frame(minWidth: 1100, minHeight: 700)
+                    .task {
+                        await appState.bootstrap(context: sharedModelContainer.mainContext)
+                    }
+            }
+            .task { await updateChecker.checkSilently() }
         }
         .modelContainer(sharedModelContainer)
         .windowStyle(.titleBar)
@@ -57,6 +68,12 @@ struct FyluAgencyApp: App {
                     appState.requestNewInvoice = true
                 }
                 .keyboardShortcut("n", modifiers: [.command])
+            }
+            CommandGroup(after: .appInfo) {
+                Button("Nach Updates suchen …") {
+                    Task { await updateChecker.checkManually() }
+                }
+                .disabled(updateChecker.isChecking)
             }
         }
 
