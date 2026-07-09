@@ -76,7 +76,9 @@ final class UpdateChecker {
             throw UpdateError.http(http.statusCode)
         }
 
-        let release = try JSONDecoder().decode(GitHubRelease.self, from: data)
+        let decoder = JSONDecoder()
+        decoder.dateDecodingStrategy = .iso8601
+        let release = try decoder.decode(GitHubRelease.self, from: data)
         let latest = release.normalizedVersion
         let current = Self.currentVersion
 
