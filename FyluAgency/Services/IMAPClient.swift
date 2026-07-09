@@ -265,8 +265,14 @@ actor IMAPClient {
     }
 
     private func login() async throws {
+        // App-Passwörter kommen bei Gmail/Yahoo/iCloud üblicherweise in
+        // 4er-Gruppen mit Leerzeichen ("abcd efgh ijkl mnop"). User kopieren
+        // das oft 1:1 rein. Die meisten IMAP-Server ignorieren die Spaces,
+        // Google akzeptiert sie aber NICHT — deshalb hier auf der Client-
+        // Seite vorsorglich alle Whitespaces aus dem Passwort ziehen.
+        let cleanedPassword = password.filter { !$0.isWhitespace }
         let escUser = escaped(username)
-        let escPass = escaped(password)
+        let escPass = escaped(cleanedPassword)
         do {
             _ = try await sendAndCollect("LOGIN \(escUser) \(escPass)")
         } catch let e as IMAPError {
