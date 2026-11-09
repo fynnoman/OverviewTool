@@ -65,7 +65,15 @@ jobs:
           # Run repository tests before publishing when Node project is present.
           if [[ -f package.json ]]; then
             npm ci
-            npm run lint --if-present
+            export CI=true
+            # Next.js 'next lint' without ESLint config opens an interactive wizard.
+            # Skip only that unconfigured command; still enforce typecheck/build.
+            if node -e "const p=require('./package.json'); process.exit(p.scripts?.lint?.trim()==='next lint' ? 0 : 1)" && \
+               ! find . -maxdepth 1 \( -name 'eslint.config.*' -o -name '.eslintrc*' \) | grep -q .; then
+              echo "::warning::Skipping unconfigured interactive next lint; configure ESLint separately."
+            else
+              npm run lint --if-present
+            fi
             npm run typecheck --if-present
             npm run build --if-present
           fi
@@ -90,7 +98,15 @@ jobs:
           set -euo pipefail
           if [[ -f package.json ]]; then
             npm ci
-            npm run lint --if-present
+            export CI=true
+            # Next.js 'next lint' without ESLint config opens an interactive wizard.
+            # Skip only that unconfigured command; still enforce typecheck/build.
+            if node -e "const p=require('./package.json'); process.exit(p.scripts?.lint?.trim()==='next lint' ? 0 : 1)" && \
+               ! find . -maxdepth 1 \( -name 'eslint.config.*' -o -name '.eslintrc*' \) | grep -q .; then
+              echo "::warning::Skipping unconfigured interactive next lint; configure ESLint separately."
+            else
+              npm run lint --if-present
+            fi
             npm run typecheck --if-present
             npm run build --if-present
           else
